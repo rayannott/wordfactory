@@ -72,16 +72,17 @@ class Cell:
 
 class Game:
     def create_field(self):
-        self.field: List[List[Cell]] = [[Cell() for _ in range(
-            self.BOARD_SIZE[1])] for _ in range(self.BOARD_SIZE[0])]
+        self.field: List[List[Cell]] = [[Cell() for _ in range(12)] for _ in range(8)]
 
     def terminate(self, message):
         print(message)
 
-    def __init__(self, WORDS, BOARD_SIZE) -> None:
+    def __init__(self, WORDS) -> None:
         self.WORDS = WORDS
-        self.BOARD_SIZE = BOARD_SIZE
         self.create_field()
+        self.commands = None
+
+    
 
     def execute(self, obj: Unit, command):
         if obj.TYPE == 'manipulator':
@@ -109,7 +110,7 @@ class Game:
         elif obj.TYPE == 'swapper':
             pass
 
-    def execute_command_on_group(self, group, command):
+    def execute_on_group(self, group, command):
         # TODO: special cases
         for obj in group:
             self.execute(obj, command)
@@ -143,10 +144,9 @@ class Manipulator(Unit):
         if self.holds is not None:
             game.terminate('Cannot take: manipulator\'s hand is not empty')
             return
-        board_size = game.BOARD_SIZE
         position = (self.pos[0] + DIRECTIONS[self.direction]
                     [0], self.pos[1] + DIRECTIONS[self.direction][1])
-        if inside_borders(position, board_size):
+        if inside_borders(position):
             try:
                 self.holds = game.field[position[0]][position[1]].take()
             except EmptyCell:
@@ -159,10 +159,10 @@ class Manipulator(Unit):
             game.terminate(
                 'There is nothing to put: manipulator\'s hand is empty')
             return
-        board_size = game.BOARD_SIZE
+        
         position = (self.pos[0] + DIRECTIONS[self.direction]
                     [0], self.pos[1] + DIRECTIONS[self.direction][1])
-        if inside_borders(position, board_size):
+        if inside_borders(position):
             game.field[position[0]][position[1]].put(self.holds)
             self.holds = None
         game.terminate('Outside of the borders')
@@ -170,13 +170,12 @@ class Manipulator(Unit):
 
 class ConveyorBelt(Container):
     def __init__(self, id, pos, orientation='h', TYPE='conveyorbelt', holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=True):
-        super().__init__(id, pos, TYPE, holds, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        super().__init__(id, pos, TYPE, holds, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.orientation = orientation
-    
-    def c_shift_positive(self, game : Game):
-        pass
-    
-    def c_shift_negative(self, game : Game):
-        pass
-    
 
+    def c_shift_positive(self, game: Game):
+        pass
+
+    def c_shift_negative(self, game: Game):
+        pass
