@@ -1,1 +1,4 @@
-venv
+venv/
+level.txt
+desktop.ini
+level_files/
