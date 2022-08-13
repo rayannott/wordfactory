@@ -1,10 +1,14 @@
 class OccupiedContainer(Exception):
     pass
 
+class OccupiedCell(Exception):
+    pass
 
 class EmptyCell(Exception):
     pass
 
+class ImmovableUnit(Exception):
+    pass
 
 class OutsideOfField(Exception):
     pass
