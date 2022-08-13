@@ -13,20 +13,27 @@ class UICell(UIButton):
 
 
 class FieldPanel(UIPanel):
-    def __init__(self, manager, *args, **kwargs):
+    def __init__(self, field, manager, *args, **kwargs):
         self.manager = manager
+        self.field = field
         field_panel_rect = pygame.Rect(
             (198, 0), (1002, 670))
         starting_layer_height = 0
         super().__init__(field_panel_rect, starting_layer_height, manager, *args, **kwargs)
         self.create_cells()
+    
+    def update_field(self, field):
+        self.field = field
+        for i in range(8):
+            for j in range(12):
+                self.cells[i][j].set_text(str(field[i][j]))
 
     def create_cells(self):
         margin = 3
         start_x = 200 + margin
         start_y = 0 + margin
         self.cells = [[UICell(relative_rect=pygame.Rect((start_x + j*(margin + CELL_SIZE[0]), start_y + i*(margin + CELL_SIZE[1])), CELL_SIZE),
-                              text='',
+                              text=str(self.field[i][j]),
                               manager=self.manager) for j in range(12)] for i in range(8)]
 
     def process_event(self, event: pygame.event.Event) -> bool:
@@ -34,7 +41,7 @@ class FieldPanel(UIPanel):
             for i, cells_row in enumerate(self.cells):
                 for j, cell in enumerate(cells_row):
                     if event.ui_element == cell:
-                        print(i, j)
+                        print(i, j, self.field[i][j])
         return super().process_event(event)
 
 
@@ -65,7 +72,7 @@ class Gui(Game):
     def __init__(self, ui_manager, WORDS):
         super().__init__(WORDS)
         self.ui_manager = ui_manager
-        self.field_panel = FieldPanel(self.ui_manager)
+        self.field_panel = FieldPanel(self.field, self.ui_manager)
         self.command_input = CommandInput(self.ui_manager)
         self.command_feedback = CommandFeedback(self.ui_manager)
         # self.letters_submitted_panel = LettersSubmittedPanel()
@@ -78,7 +85,15 @@ class Gui(Game):
             elif event.key == pygame.K_SLASH:
                 self.command_input.focus()
             elif event.key == pygame.K_RETURN:
-                self.command_feedback.set_text(self.command_input.get_text())
+                # self.command_feedback.set_text(self.command_input.get_text())
+                # self.field[1][0].contents.c_rotate_clockwise()
+                command = self.command_input.get_text()
+                print(f'{int(command[0])} {command[1]}')
+                self.execute_on_group(int(command[0]), command[1])
+        self.update()
+    
+    def update(self):
+        self.field_panel.update_field(self.field)
 
 
 def main():
@@ -92,7 +107,6 @@ def main():
 
     words = ['hi', 'hike']
     game = Gui(manager, words)
-    cursor_manager = None  # TODO??
     clock = pygame.time.Clock()
     is_running = True
 
@@ -105,6 +119,7 @@ def main():
             manager.process_events(event)
 
         manager.update(time_delta)
+        # game.update()
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
