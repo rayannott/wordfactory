@@ -23,3 +23,6 @@ def inside_borders(pos):
     row, col = pos
     M, N = (12, 8)
     return 0 <= row < M and 0 <= col < N
+
+# level2 COAT sol: 1tcpr 0+ 2trpc 1tccprrtcpr 0+ 2tcpr 1tcpc 0+ 2trpc 1trp 0+ 2trpcctccp
+# level1 CAT sol: 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc

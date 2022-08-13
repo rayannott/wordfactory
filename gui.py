@@ -1,4 +1,5 @@
 from copy import deepcopy
+from types import SimpleNamespace
 import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIWindow
@@ -18,13 +19,15 @@ class UICell(UIButton):
             rect_unit_id = pygame.Rect(0, 0, 0, 0)
             rect_unit_id.size = 30, 30
             rect_unit_id.topleft = self.relative_rect.topleft
-            self.unit_id_textbox = UITextBox(str(self.unit_id), rect_unit_id, manager)
+            self.unit_id_textbox = UITextBox(
+                str(self.unit_id), rect_unit_id, manager)
         if self.group_id is not None:
             rect_group_id = pygame.Rect(0, 0, 0, 0)
             rect_group_id.size = 30, 30
             rect_group_id.topright = self.relative_rect.topright
-            self.group_id_textbox = UITextBox(str(self.group_id), rect_group_id, manager)
-    
+            self.group_id_textbox = UITextBox(
+                str(self.group_id), rect_group_id, manager)
+
 
 class FieldPanel(UIPanel):
     def __init__(self, manager, field, OPTIONS, **kwargs):
@@ -35,7 +38,6 @@ class FieldPanel(UIPanel):
             (198, 1), (1002, 670))
         super().__init__(field_panel_rect, starting_layer_height=0, manager=manager, **kwargs)
         self.create_cells()
-
 
     def update_field(self, field):
         self.field = field
@@ -82,9 +84,8 @@ class CommandFeedback(UITextBox):
 class LogTextBox(UITextBox):
     def __init__(self, manager, **kwargs):
         self.text = ''
-        rect = pygame.Rect((1,1), (198, 600))
+        rect = pygame.Rect((1, 1), (198, 600))
         super().__init__(self.text, rect, manager, **kwargs)
-    
 
 
 class LettersSubmittedPanel(UIPanel):
@@ -99,13 +100,9 @@ class WinMessage(UIMessageWindow):
     def __init__(self, manager, words, submitted_word, *args, **kwargs):
         rect = pygame.Rect((200, 200), (300, 200))
         rect.center = (600, 400)
-        to_show = ' '
-        for word in words:
-            if word == submitted_word:
-                to_show += f'<font color=#4DE37C>{word}</font> '
-            else:
-                to_show += word
-        html_message = 'You won!<br>' + to_show
+        to_show = [f'<font color=#4DE37C>{word}</font>' if word ==
+                   submitted_word else word for word in words]
+        html_message = 'You won!<br>' + ' '.join(to_show)
         super().__init__(rect, html_message, manager, *args, **kwargs)
 
 
@@ -113,7 +110,8 @@ class Gui(Game):
     def __init__(self, ui_manager, level_file):
         super().__init__(level_file)
         self.ui_manager = ui_manager
-        self.field_panel = FieldPanel(self.ui_manager, self.field, self.OPTIONS)
+        self.field_panel = FieldPanel(
+            self.ui_manager, self.field, self.OPTIONS)
         self.command_input = CommandInput(self.ui_manager)
         self.command_feedback = CommandFeedback(self.ui_manager)
         self.logs = LogTextBox(self.ui_manager)
@@ -127,28 +125,62 @@ class Gui(Game):
                 self.command_input.unfocus()
             elif event.key == pygame.K_SLASH:
                 self.command_input.focus()
-            elif event.key == pygame.K_RETURN and pygame.key.get_mods() & pygame.KMOD_SHIFT:
-                self.show_win_message()
-            elif event.key == pygame.K_RETURN:  # run one command
-                command = self.command_input.get_text()
+            elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN and pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                # compile commands
+                self.multiple_cmds_mode.is_active = True
+                self.command_input.unfocus()
+
+                raw_commands = self.command_input.get_text()
+                self.command_history.append(raw_commands)
+                self.command_input.set_text('')
+                self.command_handler.get_command_sequence(raw_commands)
+
+                self.multiple_cmds_mode.commands = self.command_handler.result
+                self.multiple_cmds_mode.commands_to_display = self.command_handler.result_to_display
+            elif self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
+                this_command = self.multiple_cmds_mode.commands[self.multiple_cmds_mode.current_cmd_index]
+                print(this_command)
                 try:
-                    self.execute_on_group(command)
+                    self.execute_on_group(this_command)
                 except Warning as e:
                     print(e)
                     self.logs.append_html_text('warning<br>')
+
+                self.multiple_cmds_mode.current_cmd_index += 1
+                if len(self.multiple_cmds_mode.commands) <= self.multiple_cmds_mode.current_cmd_index:
+                    print('finish')
+                    self.command_feedback.set_text('')
+                    self.multiple_cmds_mode = SimpleNamespace(
+                        is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
+                    self.command_handler.reset()
+            elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
+                self.command_input.set_text(self.command_history[-1])
+            elif event.key == pygame.K_RETURN:
+                # run one command
+                raw_command = self.command_input.get_text()
+                single_command = self.command_handler.single_command(
+                    raw_command)
+                try:
+                    self.execute_on_group(single_command)
+                except Warning as e:
+                    print(e)
+                    self.logs.append_html_text('warning<br>')
+                # self.command_feedback.append_html_text(command + ' ')
                 # except Exception as e:
                 #     print(e)
                 #     self.logs.append_html_text('error')
                 #     # self.field = deepcopy(self.field_initial_config)
                 #     self.command_feedback.set_text('')
-
-                self.command_feedback.append_html_text(command + ' ')
             # TODO: shift + Return = run programm
         if not self.victory:
             self.update()
 
     def update(self):
         self.field_panel.update_field(self.field)
+        if self.multiple_cmds_mode.is_active:
+            to_display = [f'<font color=#F1E970>{cmd}</font>' if i == self.multiple_cmds_mode.current_cmd_index
+                          else cmd for i, cmd in enumerate(self.multiple_cmds_mode.commands_to_display)]
+            self.command_feedback.set_text(' '.join(to_display))
         if self.is_victory():
             self.show_win_message()
             self.victory = True

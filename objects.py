@@ -1,9 +1,11 @@
 import json
-from typing import List
+from types import SimpleNamespace
+from typing import List, Tuple
 from exceptions import *
 from utils import *
 import re
 from copy import deepcopy
+from command_handler import CommandHandler
 
 
 class Unit:
@@ -52,7 +54,7 @@ class Container(Unit):
         # if self.IS_MOVABLE:
         #     return self
 
-    def put_object(self, obj : Unit):
+    def put_object(self, obj: Unit):
         if self.is_empty():
             self.holds = obj
         else:
@@ -97,7 +99,7 @@ class Cell:
             raise ImmovableUnit
 
     def put(self, obj):
-        obj.pos = None # this means the object is inside of a container and cannot be controlled
+        obj.pos = None  # this means the object is inside of a container and cannot be controlled
         self.pending = obj
 
 
@@ -110,9 +112,13 @@ class Game:
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
-        self.commands = []
         self.terminated = False
+        self.command_handler = CommandHandler()
         self.field_initial_config = deepcopy(self.field)
+        self.command_history = []
+
+        self.multiple_cmds_mode = SimpleNamespace(
+            is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
 
         with open('options.json') as f:
             self.OPTIONS = json.load(f)
@@ -163,28 +169,36 @@ class Game:
                             kwargs = dict()
                             for kw in kwargs_list:
                                 if pattern_integer_value.match(kw):
-                                    key_, val_ = pattern_integer_value.search(kw).groups()
+                                    key_, val_ = pattern_integer_value.search(
+                                        kw).groups()
                                     kwargs[key_] = int(val_)
                                 elif pattern_str_value.match(kw):
-                                    key_, val_ = pattern_str_value.search(kw).groups()
+                                    key_, val_ = pattern_str_value.search(
+                                        kw).groups()
                                     kwargs[key_] = val_
                         if unit_name == 'InitStack':
-                            self.objects.append(InitStack(id=unit_id, pos=pos, letters=self.LETTERS))
+                            self.objects.append(
+                                InitStack(id=unit_id, pos=pos, letters=self.LETTERS))
                         elif unit_name == 'Submitter':
-                            self.objects.append(Submitter(id=unit_id, pos=pos, submitted=self.submitted))
+                            self.objects.append(
+                                Submitter(id=unit_id, pos=pos, submitted=self.submitted))
                         else:
                             self.objects.append(
-                                unit_classes[unit_name](id=unit_id, pos=pos, **kwargs)
+                                unit_classes[unit_name](
+                                    id=unit_id, pos=pos, **kwargs)
                             )
                         unit_id += 1
                     elif name == 'groups':
                         groups = search_groups[0].split(',')
                         for group in groups:
-                            this_group_object_indices = list(map(int, group.split()))
-                            types_set = {self.objects[i].TYPE for i in this_group_object_indices}
+                            this_group_object_indices = list(
+                                map(int, group.split()))
+                            types_set = {
+                                self.objects[i].TYPE for i in this_group_object_indices}
                             if len(types_set) == 1:
                                 self.groups.append(
-                                    Group(group_id, units_type=list(types_set)[0], units=this_group_object_indices)
+                                    Group(group_id, units_type=list(types_set)[
+                                          0], units=this_group_object_indices)
                                 )
                                 for this_group_obj_index in this_group_object_indices:
                                     self.objects[this_group_obj_index].IN_GROUP = group_id
@@ -264,8 +278,10 @@ class Game:
         elif obj.TYPE == 'swapper':
             pass
 
-    def execute_on_group(self, single_command_raw):
-        group_id, command = int(single_command_raw[0]), single_command_raw[1]
+    # single_command_raw):
+    def execute_on_group(self, single_command: Tuple[int, str]):
+        # group_id, command = int(single_command_raw[0]), single_command_raw[1]
+        group_id, command = single_command
         # TODO: special cases
         for obj_id in self.groups[group_id].units:
             self.execute(self.objects[obj_id], command)
@@ -308,7 +324,7 @@ class Manipulator(Unit):
         if self.holds is not None:
             # TODO: replace game.terminate with exceptions
             raise HandNotEmpty('Cannot take: manipulator\'s hand is not empty')
-        
+
         delta = DIRECTIONS[self.direction]
         position = (self.pos[0] + delta[0],
                     self.pos[1] + delta[1])
@@ -317,13 +333,15 @@ class Manipulator(Unit):
             try:
                 self.holds = game.field[position[0]][position[1]].take()
             except EmptyCell:
-                raise TakingFromEmptyCell('Manipulator cannot take from an empty cell')
+                raise TakingFromEmptyCell(
+                    'Manipulator cannot take from an empty cell')
         else:
             raise TakingFromOusideOfField('Taking from outside of the borders')
 
     def c_put(self, game: Game):
         if self.holds is None:
-            raise EmptyHand('There is nothing to put: manipulator\'s hand is empty')
+            raise EmptyHand(
+                'There is nothing to put: manipulator\'s hand is empty')
 
         delta = DIRECTIONS[self.direction]
         position = (self.pos[0] + delta[0],
@@ -332,7 +350,8 @@ class Manipulator(Unit):
             game.field[position[0]][position[1]].put(self.holds)
             self.holds = None
         else:
-            raise PutOutsideOfField('Trying to put outside of the field borders')
+            raise PutOutsideOfField(
+                'Trying to put outside of the field borders')
 
 
 class ConveyorBelt(Container):
@@ -358,7 +377,8 @@ class ConveyorBelt(Container):
                 game.field[position[0]][position[1]].put(self.holds)
                 self.holds = None
         else:
-            raise PutOutsideOfField('Trying to put outside of the field borders')
+            raise PutOutsideOfField(
+                'Trying to put outside of the field borders')
 
     def c_shift_negative(self, game: Game):
         if self.orientation == 'h':
@@ -374,7 +394,8 @@ class ConveyorBelt(Container):
                 game.field[position[0]][position[1]].put(self.holds)
                 self.holds = None
         else:
-            raise PutOutsideOfField('Trying to put outside of the field borders')
+            raise PutOutsideOfField(
+                'Trying to put outside of the field borders')
 
 
 class Stack(Container):
@@ -420,15 +441,17 @@ class InitStack(Stack):
         s = ''.join(map(lambda x: x.letter, self.stack))
         return f'{s}'
 
+
 class Submitter(Container):
     def __init__(self, id, pos, submitted, TYPE='submitter', holds=None, IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
-        super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.submitted = submitted
-    
+
     def put_object(self, obj: Unit):
         self.submit(obj)
 
-    def submit(self, obj : Unit):
+    def submit(self, obj: Unit):
         if obj.TYPE == 'card':
             self.submitted.append(obj.letter)
         else:
@@ -437,7 +460,6 @@ class Submitter(Container):
     def __str__(self):
         s = ''.join(self.submitted)
         return f'|{s}|'
-
 
 
 class Rock(Unit):
