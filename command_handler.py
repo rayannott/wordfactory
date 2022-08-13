@@ -54,7 +54,6 @@ class CommandHandler:
             print('cmd', el)
 
     def get_command_sequence(self, raw_text):
-
         if not CommandHandler.valid_parentheses(raw_text):
             raise UnmatchedParentheses('Some parentheses are unmatched in the command')
         if re.findall(r'\[[^\[\]]*[\(\)][^\[\]]*\]', raw_text):
@@ -72,6 +71,6 @@ class CommandHandler:
 
 if __name__ == '__main__':
     ch = CommandHandler()
-    text = '1t (3+ 1p) 1c (1e) 5[3r 5p 1c] #1'
+    text = '1t (3+ 1p) 1c (1e) 5[3r #2 1c] #1'
     ch.get_command_sequence(text)
         
