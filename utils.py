@@ -7,6 +7,8 @@ CELL_SIZE = (80, 80)
 # COMMAND_INPUT_ALLOWED_CHARS = list('0123456789tpcrf+- ')
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 
+CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'swapper'}
+
 COMMAND_CHARACTERS = {
     't': None,
     'p': None,
