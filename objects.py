@@ -1,16 +1,19 @@
+import json
 from typing import List
 from exceptions import *
 from utils import *
 import re
+from copy import deepcopy
 
 
 class Unit:
-    def __init__(self, id, pos, TYPE,
+    def __init__(self, id, pos, TYPE, IN_GROUP=None,
                  IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False,
                  IS_COUPLED=False, IS_CONTAINER=False):
         self.id = id
         self.pos = pos
         self.TYPE = TYPE
+        self.IN_GROUP = IN_GROUP
         self.IS_MOVABLE = IS_MOVABLE
         self.IS_STACKABLE = IS_STACKABLE
         self.IS_CONTROLLABLE = IS_CONTROLLABLE
@@ -22,9 +25,19 @@ class Unit:
         pass
 
 
+class Card(Unit):
+    def __init__(self, id, pos, letter, TYPE='card', IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IS_MOVABLE, IS_STACKABLE,
+                         IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.letter = letter
+
+    def __str__(self):
+        return f"'{self.letter}'"
+
+
 class Container(Unit):
-    def __init__(self, id, pos, TYPE, holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
-        super().__init__(id, pos, TYPE, IS_MOVABLE,
+    def __init__(self, id, pos, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.holds = holds
 
@@ -39,7 +52,7 @@ class Container(Unit):
         # if self.IS_MOVABLE:
         #     return self
 
-    def put_object(self, obj):
+    def put_object(self, obj : Unit):
         if self.is_empty():
             self.holds = obj
         else:
@@ -63,11 +76,12 @@ class Cell:
                 self.contents = self.pending
                 self.pending = None
             else:
-                raise OccupiedCell
-            if isinstance(self.contents, Container):
-                self.contents.put_object(self.pending)
-                self.pending = None
-                # TODO: need to clear pending
+                if isinstance(self.contents, Container):
+                    self.contents.put_object(self.pending)
+                    self.pending = None
+                    # TODO: need to clear pending
+                else:
+                    raise OccupiedCell
             self.contents.pos = self.pos
 
     def take(self):
@@ -83,32 +97,114 @@ class Cell:
             raise ImmovableUnit
 
     def put(self, obj):
+        obj.pos = None # this means the object is inside of a container and cannot be controlled
         self.pending = obj
 
 
 class Game:
-    def __init__(self, WORDS) -> None:
-        self.WORDS = WORDS
+    def __init__(self, level_file: str):
+        self.victory = False
         self.objects = []
         self.groups = []
+        self.submitted = []
         self.create_empty_field()
-        self.load_dummy_objects()
-        self.create_dummy_groups()
+        self.load_objects_from_txt(level_file)
         self.fill_field()
-        self.commands = None
+        self.commands = []
         self.terminated = False
+        self.field_initial_config = deepcopy(self.field)
+
+        with open('options.json') as f:
+            self.OPTIONS = json.load(f)
+
+    def is_victory(self):
+        return ''.join(self.submitted) in self.WORDS
 
     def create_empty_field(self):
         # loading field from .txt file
         self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(12)]
                                         for i in range(8)]
 
-    def load_objects_from_txt(self, instruction):
-        pattern = re.compile(r'^(\d \d) (\w+)( .+)?')
-        with open(instruction) as f:
+    def load_objects_from_txt(self, instruction_file):
+        patterns = {
+            'unit': re.compile(r'^(\d \d) (\w+)( .+)?'),
+            'groups': re.compile(r'^groups: \{([\[\] ,\d]+)\}'),
+            'words': re.compile(r'^words: \{([A-Z .]+)\}'),
+            'letters': re.compile(r'^letters: \{([A-Z.]+)\}')
+        }
+        pattern_integer_value = re.compile(r'(\w+)=(\w+)')
+        pattern_str_value = re.compile(r"(\w+)='(\w+)'")
+
+        unit_classes = {
+            'Manipulator': Manipulator,
+            'ConveyorBelt': ConveyorBelt,
+            'Stack': Stack,
+            'Rock': Rock,
+        }
+
+        group_id = 0
+        unit_id = 0
+
+        with open(instruction_file) as f:
             lines = f.readlines()
+
         for line in lines:
-            print(pattern.search(line).groups())
+            for name, pattern in patterns.items():
+                if pattern.match(line):
+                    search_groups = pattern.search(line).groups()
+                    # print(name, line, search_groups)
+                    if name == 'unit':
+                        position_str, unit_name, kwargs_str = search_groups
+                        pos = tuple(map(int, position_str.split()))
+                        if kwargs_str is None:
+                            kwargs = dict()
+                        else:
+                            kwargs_list = kwargs_str.strip().split()
+                            kwargs = dict()
+                            for kw in kwargs_list:
+                                if pattern_integer_value.match(kw):
+                                    key_, val_ = pattern_integer_value.search(kw).groups()
+                                    kwargs[key_] = int(val_)
+                                elif pattern_str_value.match(kw):
+                                    key_, val_ = pattern_str_value.search(kw).groups()
+                                    kwargs[key_] = val_
+                        if unit_name == 'InitStack':
+                            self.objects.append(InitStack(id=unit_id, pos=pos, letters=self.LETTERS))
+                        elif unit_name == 'Submitter':
+                            self.objects.append(Submitter(id=unit_id, pos=pos, submitted=self.submitted))
+                        else:
+                            self.objects.append(
+                                unit_classes[unit_name](id=unit_id, pos=pos, **kwargs)
+                            )
+                        unit_id += 1
+                    elif name == 'groups':
+                        groups = search_groups[0].split(',')
+                        for group in groups:
+                            this_group_object_indices = list(map(int, group.split()))
+                            types_set = {self.objects[i].TYPE for i in this_group_object_indices}
+                            if len(types_set) == 1:
+                                self.groups.append(
+                                    Group(group_id, units_type=list(types_set)[0], units=this_group_object_indices)
+                                )
+                                for this_group_obj_index in this_group_object_indices:
+                                    self.objects[this_group_obj_index].IN_GROUP = group_id
+                            else:
+                                raise GroupOfDifferentTypes
+                            group_id += 1
+                    elif name == 'words':
+                        self.WORDS = search_groups[0].split()
+                    elif name == 'letters':
+                        self.LETTERS = search_groups[0]
+                    else:
+                        raise UnmatchedCreationPattern
+        # other groups
+        for id, unit in enumerate(self.objects):
+            if unit.TYPE in CONTROLLABLE_UNITS and unit.IN_GROUP is None:
+                self.groups.append(
+                    Group(id=group_id, units_type=unit.TYPE, units=[id])
+                )
+                self.objects[id].IN_GROUP = group_id
+                group_id += 1
 
     def load_dummy_objects(self):
         self.objects = [
@@ -117,16 +213,18 @@ class Game:
             ConveyorBelt(2, (1, 2)),
             Manipulator(3, (2, 2), 3),
             Manipulator(4, (0, 0), 3),
-            Rock(5, (2, 3))
+            Rock(5, (2, 3)),
+            Stack(6, (2, 0)),
+            InitStack(7, (3, 2), self.LETTERS),
+            Submitter(8, (1, 3), self.submitted)
         ]
 
     def create_dummy_groups(self):
         self.groups = [
-            Group(id=0, units_type='conveyorbelt', units=[
-                  self.objects[1], self.objects[2]]),
-            Group(id=1, units_type='manipulator', units=[self.objects[0]]),
-            Group(id=2, units_type='manipulator', units=[self.objects[3]]),
-            Group(id=3, units_type='manipulator', units=[self.objects[4]]),
+            Group(id=0, units_type='conveyorbelt', units=[1, 2]),
+            Group(id=1, units_type='manipulator', units=[0]),
+            Group(id=2, units_type='manipulator', units=[3]),
+            Group(id=3, units_type='manipulator', units=[4]),
         ]
 
     def fill_field(self):
@@ -139,6 +237,8 @@ class Game:
         print(message)
 
     def execute(self, obj: Unit, command):
+        if obj.pos is None:
+            raise ControllableIsInsideContainer
         if obj.TYPE == 'manipulator':
             if command == 't':
                 obj.c_take(game=self)
@@ -156,7 +256,7 @@ class Game:
             if command == '+':
                 obj.c_shift_positive(game=self)
             elif command == '-':
-                obj.c_shift_positive(game=self)
+                obj.c_shift_negative(game=self)
             else:
                 self.terminate(f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'flipper':
@@ -164,10 +264,11 @@ class Game:
         elif obj.TYPE == 'swapper':
             pass
 
-    def execute_on_group(self, group_id: int, command: str):
+    def execute_on_group(self, single_command_raw):
+        group_id, command = int(single_command_raw[0]), single_command_raw[1]
         # TODO: special cases
-        for obj in self.groups[group_id].units:
-            self.execute(obj, command)
+        for obj_id in self.groups[group_id].units:
+            self.execute(self.objects[obj_id], command)
         self.push_all()
 
     def push_all(self):
@@ -180,20 +281,20 @@ class Group:
     def __init__(self, id, units_type, units, IS_COUPLED=False):
         self.id = id
         self.units_type = units_type
-        self.units = units
+        self.units = units  # units' ids
         self.IS_COUPLED = IS_COUPLED
 
 
 class Manipulator(Unit):
-    def __init__(self, id, pos, direction, holds=None, TYPE='manipulator', IS_MOVABLE=True,
+    def __init__(self, id, pos, direction, holds=None, TYPE='manipulator', IN_GROUP=None, IS_MOVABLE=True,
                  IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IS_MOVABLE,
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.direction = direction
         self.holds = holds
 
     def __str__(self):
-        return f'{self.id}M{self.direction}[{self.holds}]'
+        return f'M{self.direction}[{self.holds}]'
 
     def c_rotate_clockwise(self):
         self.direction += 1
@@ -205,75 +306,152 @@ class Manipulator(Unit):
 
     def c_take(self, game: Game):
         if self.holds is not None:
-            game.terminate('Cannot take: manipulator\'s hand is not empty')
-            return
-
-        position = (self.pos[0] + DIRECTIONS[self.direction][0],
-                    self.pos[1] + DIRECTIONS[self.direction][1])
+            # TODO: replace game.terminate with exceptions
+            raise HandNotEmpty('Cannot take: manipulator\'s hand is not empty')
+        
+        delta = DIRECTIONS[self.direction]
+        position = (self.pos[0] + delta[0],
+                    self.pos[1] + delta[1])
         print('Hand over position:', position)
         if inside_borders(position):
             try:
-                print('Trying to take', game.field[position[0]][position[1]])
                 self.holds = game.field[position[0]][position[1]].take()
             except EmptyCell:
-                game.terminate('Manipulator cannot take from an empty cell')
-                return
+                raise TakingFromEmptyCell('Manipulator cannot take from an empty cell')
         else:
-            game.terminate('Outside of the borders')
+            raise TakingFromOusideOfField('Taking from outside of the borders')
 
     def c_put(self, game: Game):
         if self.holds is None:
-            game.terminate(
-                'There is nothing to put: manipulator\'s hand is empty')
-            return
+            raise EmptyHand('There is nothing to put: manipulator\'s hand is empty')
 
-        position = (self.pos[0] + DIRECTIONS[self.direction][0],
-                    self.pos[1] + DIRECTIONS[self.direction][1])
+        delta = DIRECTIONS[self.direction]
+        position = (self.pos[0] + delta[0],
+                    self.pos[1] + delta[1])
         if inside_borders(position):
             game.field[position[0]][position[1]].put(self.holds)
             self.holds = None
         else:
-            game.terminate('Outside of the borders')
+            raise PutOutsideOfField('Trying to put outside of the field borders')
 
 
 class ConveyorBelt(Container):
-    def __init__(self, id, pos, orientation='h', TYPE='conveyorbelt', holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=True):
-        super().__init__(id, pos, TYPE, holds, IS_MOVABLE,
+    def __init__(self, id, pos, orientation='h', TYPE='conveyorbelt', IN_GROUP=None, holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=True):
+        super().__init__(id, pos, TYPE, IN_GROUP, holds, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.orientation = orientation
 
     def __str__(self):
-        return f'{self.id}C{self.orientation}[{self.holds}]'
+        return f'C{self.orientation}[{self.holds}]'
 
     def c_shift_positive(self, game: Game):
-        pass
+        if self.orientation == 'h':
+            delta = DIRECTIONS[1]  # right
+        else:
+            delta = DIRECTIONS[2]
+
+        position = (self.pos[0] + delta[0],
+                    self.pos[1] + delta[1])
+
+        if inside_borders(position):
+            if not self.is_empty():
+                game.field[position[0]][position[1]].put(self.holds)
+                self.holds = None
+        else:
+            raise PutOutsideOfField('Trying to put outside of the field borders')
 
     def c_shift_negative(self, game: Game):
-        pass
+        if self.orientation == 'h':
+            delta = DIRECTIONS[3]  # right
+        else:
+            delta = DIRECTIONS[0]
+
+        position = (self.pos[0] + delta[0],
+                    self.pos[1] + delta[1])
+
+        if inside_borders(position):
+            if not self.is_empty():
+                game.field[position[0]][position[1]].put(self.holds)
+                self.holds = None
+        else:
+            raise PutOutsideOfField('Trying to put outside of the field borders')
 
 
 class Stack(Container):
-    def __init__(self, id, pos, stack=None, TYPE='stack', holds=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
-        super().__init__(id, pos, TYPE, holds, IS_MOVABLE,
+    def __init__(self, id, pos, stack=None, MAX_OBJECTS=20, TYPE='stack', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
+        super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.stack = [] if stack is None else stack
+        self.MAX_OBJECTS = MAX_OBJECTS
 
-    def append(self, obj):
-        self.stack.append(obj)
+    def is_empty(self):
+        return not bool(self.stack)
+
+    def get_object(self):
+        if not self.is_empty():
+            return self.stack.pop()
+        return self
+
+    def put_object(self, obj):
+        if obj.IS_STACKABLE:
+            if len(self.stack) < self.MAX_OBJECTS:
+                self.stack.append(obj)
+            else:
+                raise StackOverflow
+        else:
+            raise ObjectNotStackable
 
     def __str__(self):
-        return 'S'
+        s = ','.join(map(str, self.stack))
+        return f'S[{s}]'
+
+
+class InitStack(Stack):
+    def __init__(self, id, pos, letters, MAX_OBJECTS=20, TYPE='initstack', holds=None, IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
+        stack = [Card(id=-i, pos=None, letter=ch)
+                 for i, ch in enumerate(letters, 1)]
+        super().__init__(id, pos, stack[::-1], MAX_OBJECTS, TYPE, holds, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+
+    def put_object(self, obj):
+        raise InitStackPutObject
+
+    def __str__(self):
+        s = ''.join(map(lambda x: x.letter, self.stack))
+        return f'{s}'
+
+class Submitter(Container):
+    def __init__(self, id, pos, submitted, TYPE='submitter', holds=None, IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
+        super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.submitted = submitted
+    
+    def put_object(self, obj: Unit):
+        self.submit(obj)
+
+    def submit(self, obj : Unit):
+        if obj.TYPE == 'card':
+            self.submitted.append(obj.letter)
+        else:
+            raise NotCardSubmitted
+
+    def __str__(self):
+        s = ''.join(self.submitted)
+        return f'|{s}|'
+
 
 
 class Rock(Unit):
-    def __init__(self, id, pos, TYPE='rock', IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IS_MOVABLE, IS_STACKABLE,
+    def __init__(self, id, pos, TYPE='rock', IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
 
     def __str__(self):
-        return 'R'
+        return 'Rock'
 
 
 if __name__ == '__main__':
-    g = Game([])
-    g.load_objects_from_txt('level.txt')
+    g = Game('level_files/level2.txt')
+    print(g.WORDS, g.LETTERS)
+    for i, el in enumerate(g.objects):
+        print(el, el.IN_GROUP)
+    print(g.groups)
