@@ -1,3 +1,18 @@
+class Warning(Exception):
+    pass
+
+class EmptyHand(Warning):
+    pass
+
+class TakingFromEmptyCell(Warning):
+    pass
+
+class TakingFromOusideOfField(Warning):
+    pass
+
+class HandNotEmpty(Warning):
+    pass
+
 class OccupiedContainer(Exception):
     pass
 
@@ -10,6 +25,9 @@ class EmptyCell(Exception):
 class ImmovableUnit(Exception):
     pass
 
+class ControllableIsInsideContainer(Exception):
+    pass
+
 class OutsideOfField(Exception):
     pass
 
@@ -18,7 +36,28 @@ class UnknownCommand(Exception):
     pass
 
 
-class EmptyHand(Exception):
+class StackOverflow(Exception):
+    pass
+
+class InitStackPutObject(Exception):
+    pass
+
+
+class ObjectNotStackable(Exception):
+    pass
+
+class NotCardSubmitted(Exception):
+    pass
+
+# ...
+
+class UnmatchedCreationPattern(Exception):
+    pass
+
+class GroupOfDifferentTypes(Exception):
+    pass
+
+class PutOutsideOfField(Exception):
     pass
 
 # ...
