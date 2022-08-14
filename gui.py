@@ -133,9 +133,13 @@ class Gui(Game):
         self.command_feedback = CommandFeedback(self.ui_manager)
         self.logs = LogTextBox(self.ui_manager)
         words_str = paint(' '.join(self.WORDS), '#E9D885')
-        self.logs.log(f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>')
+
         self.logs.log(
-            f'{paint("{")}{paint(self.NOTE, "#E19DD9")}{paint("}")}<br>')
+            f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>')
+        if self.NOTE:
+            self.logs.log(
+                    f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>')
+                
 
     def reset_game_gui(self):
         # really prone to bugs
@@ -259,7 +263,7 @@ def main():
 
     manager = pygame_gui.UIManager(window_size)
 
-    level_file = 'level_files/level5.txt'
+    level_file = 'level_files/level7.txt'
     game = Gui(manager, level_file)
     clock = pygame.time.Clock()
     is_running = True
