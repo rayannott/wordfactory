@@ -26,11 +26,11 @@ def inside_borders(pos):
     return 0 <= row < M and 0 <= col < N
 
 
-def paint(s: str, color: str = '#FFFFFF'):
+def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
     Returns html-colored with given color string s 
     '''
-    return f'<font color={color}>{s}</font>'
+    return f'<font color={color} size={size}>{s}</font>'
 
 # level2 COAT sol: 1tcpr 0+ 2trpc 1tccprrtcpr 0+ 2tcpr 1tcpc 0+ 2trpc 1trp 0+ 2trpcctccp
 # level1 CAT sol: 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc
