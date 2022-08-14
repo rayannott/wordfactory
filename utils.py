@@ -19,10 +19,18 @@ COMMAND_CHARACTERS = {
     'f': None,
 }
 
+
 def inside_borders(pos):
     row, col = pos
     M, N = (12, 8)
     return 0 <= row < M and 0 <= col < N
+
+
+def paint(s: str, color: str = '#FFFFFF'):
+    '''
+    Returns html-colored with given color string s 
+    '''
+    return f'<font color={color}>{s}</font>'
 
 # level2 COAT sol: 1tcpr 0+ 2trpc 1tccprrtcpr 0+ 2tcpr 1tcpc 0+ 2trpc 1trp 0+ 2trpcctccp
 # level1 CAT sol: 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc
