@@ -26,10 +26,13 @@ class Unit:
         # replaces itself with None object
         pass
 
+    def describe(self):
+        return f'id={self.id} group_id={self.IN_GROUP} pos={self.pos} type={self.TYPE} controllable={self.IS_CONTROLLABLE} object={self}'
+
 
 class Card(Unit):
-    def __init__(self, id, pos, letter, TYPE='card', IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IS_MOVABLE, IS_STACKABLE,
+    def __init__(self, id, pos, letter, TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.letter = letter
 
@@ -56,6 +59,7 @@ class Container(Unit):
 
     def put_object(self, obj: Unit):
         if self.is_empty():
+            obj.pos = None
             self.holds = obj
         else:
             raise OccupiedContainer
@@ -92,14 +96,15 @@ class Cell:
         if isinstance(self.contents, Container) and not self.contents.is_empty():
             return self.contents.get_object()
         if self.contents.IS_MOVABLE:
+            # this means the object is inside of a container and cannot be controlled
+            self.contents.pos = None
             tmp = self.contents
             self.contents = None
             return tmp
         else:
-            raise ImmovableUnit
+            raise ImmovableUnit(f'Unit {self.contents.TYPE} is immovable')
 
     def put(self, obj):
-        obj.pos = None  # this means the object is inside of a container and cannot be controlled
         self.pending = obj
 
 
@@ -114,17 +119,29 @@ class Game:
         self.fill_field()
         self.terminated = False
         self.command_handler = CommandHandler()
-        self.field_initial_config = deepcopy(self.field)
+        self.INITIAL_CONFIGS = {
+            'FIELD': deepcopy(self.field),
+            'OBJECTS': deepcopy(self.objects)
+        }
         self.command_history = []
 
-        self.multiple_cmds_mode = SimpleNamespace(
-            is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
+        self.reset_multiline_cmds_mode()
 
         with open('options.json') as f:
             self.OPTIONS = json.load(f)
 
+    def reset_multiline_cmds_mode(self):
+        self.multiple_cmds_mode = SimpleNamespace(
+            is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
+
     def is_victory(self):
         return ''.join(self.submitted) in self.WORDS
+    
+    def reset_game(self):
+        self.field = deepcopy(self.INITIAL_CONFIGS['FIELD'])
+        self.objects = deepcopy(self.INITIAL_CONFIGS['OBJECTS'])
+        self.command_history = []
+        self.victory = False
 
     def create_empty_field(self):
         # loading field from .txt file
@@ -134,23 +151,21 @@ class Game:
     def load_objects_from_txt(self, instruction_file):
         patterns = {
             'unit': re.compile(r'^(\d \d) (\w+)( .+)?'),
-            'groups': re.compile(r'^groups: \{([\[\] ,\d]+)\}'),
-            'words': re.compile(r'^words: \{([A-Z .]+)\}'),
-            'letters': re.compile(r'^letters: \{([A-Z.]+)\}')
+            'groups': re.compile(r'^groups: ?\{([\[\] ,\d]+)\}'),
+            'words': re.compile(r'^words: ?\{([A-Z .]+)\}'),
+            'letters': re.compile(r'^letters: ?\{([A-Z.]+)\}')
         }
         pattern_integer_value = re.compile(r'(\w+)=(\w+)')
         pattern_str_value = re.compile(r"(\w+)='(\w+)'")
-
         unit_classes = {
             'Manipulator': Manipulator,
             'ConveyorBelt': ConveyorBelt,
             'Stack': Stack,
             'Rock': Rock,
+            'Flipper': Flipper
         }
-
         group_id = 0
         unit_id = 0
-
         with open(instruction_file) as f:
             lines = f.readlines()
 
@@ -158,7 +173,6 @@ class Game:
             for name, pattern in patterns.items():
                 if pattern.match(line):
                     search_groups = pattern.search(line).groups()
-                    # print(name, line, search_groups)
                     if name == 'unit':
                         position_str, unit_name, kwargs_str = search_groups
                         pos = tuple(map(int, position_str.split()))
@@ -263,7 +277,8 @@ class Game:
             elif command == 'r':
                 obj.c_rotate_counter_clockwise()
             else:
-                self.terminate(f'Unknown command for {obj.TYPE}: {command}')
+                raise UnknownCommand(
+                    f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'piston':
             pass
         elif obj.TYPE == 'conveyorbelt':
@@ -272,9 +287,14 @@ class Game:
             elif command == '-':
                 obj.c_shift_negative(game=self)
             else:
-                self.terminate(f'Unknown command for {obj.TYPE}: {command}')
+                raise UnknownCommand(
+                    f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'flipper':
-            pass
+            if command == 'f':
+                obj.flip_unit(game=self)
+            else:
+                raise UnknownCommand(
+                    f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'swapper':
             pass
 
@@ -283,8 +303,11 @@ class Game:
         # group_id, command = int(single_command_raw[0]), single_command_raw[1]
         group_id, command = single_command
         # TODO: special cases
-        for obj_id in self.groups[group_id].units:
-            self.execute(self.objects[obj_id], command)
+        try:
+            for obj_id in self.groups[group_id].units:
+                self.execute(self.objects[obj_id], command)
+        except IndexError:
+            raise NonExistingGroup(f'There is no group with id={group_id}')
         self.push_all()
 
     def push_all(self):
@@ -322,13 +345,11 @@ class Manipulator(Unit):
 
     def c_take(self, game: Game):
         if self.holds is not None:
-            # TODO: replace game.terminate with exceptions
             raise HandNotEmpty('Cannot take: manipulator\'s hand is not empty')
 
         delta = DIRECTIONS[self.direction]
         position = (self.pos[0] + delta[0],
                     self.pos[1] + delta[1])
-        print('Hand over position:', position)
         if inside_borders(position):
             try:
                 self.holds = game.field[position[0]][position[1]].take()
@@ -421,6 +442,9 @@ class Stack(Container):
                 raise StackOverflow
         else:
             raise ObjectNotStackable
+    
+    def flip(self):
+        self.stack = self.stack[::-1]
 
     def __str__(self):
         s = ','.join(map(str, self.stack))
@@ -436,6 +460,9 @@ class InitStack(Stack):
 
     def put_object(self, obj):
         raise InitStackPutObject
+    
+    def flip(self):
+        raise InitStackFlip
 
     def __str__(self):
         s = ''.join(map(lambda x: x.letter, self.stack))
@@ -451,15 +478,48 @@ class Submitter(Container):
     def put_object(self, obj: Unit):
         self.submit(obj)
 
+    def get_object(self):
+        raise SubmitterTakeObject
+
     def submit(self, obj: Unit):
         if obj.TYPE == 'card':
             self.submitted.append(obj.letter)
         else:
             raise NotCardSubmitted
+    
+    def is_empty(self):
+        return not bool(self.submitted)
 
     def __str__(self):
         s = ''.join(self.submitted)
         return f'|{s}|'
+
+
+class Flipper(Unit):
+    def __init__(self, id, pos, direction, TYPE='flipper', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.direction = direction
+
+    def flip_unit(self, game):
+        delta = DIRECTIONS[self.direction]
+        position = (self.pos[0] + delta[0],
+                    self.pos[1] + delta[1])
+        if inside_borders(position):
+            if game.field[position[0]][position[1]].contents is not None:
+                try:
+                    game.field[position[0]][position[1]].contents.flip()
+                except AttributeError:
+                    raise ObjectUnflippable(f'Object {game.field[position[0]][position[1]].contents.TYPE} is unflippable')
+            else:
+                raise NothingToFlip('There is nothing there to flip')
+        else:
+            raise FlippingOusideOfField('Trying to flip an object outside of the field')
+
+        
+
+    def __str__(self):
+        return f'F{self.direction}'
 
 
 class Rock(Unit):
@@ -471,9 +531,9 @@ class Rock(Unit):
         return 'Rock'
 
 
-if __name__ == '__main__':
-    g = Game('level_files/level2.txt')
-    print(g.WORDS, g.LETTERS)
-    for i, el in enumerate(g.objects):
-        print(el, el.IN_GROUP)
-    print(g.groups)
+# if __name__ == '__main__':
+#     g = Game('level_files/level2.txt')
+#     print(g.WORDS, g.LETTERS)
+#     for i, el in enumerate(g.objects):
+#         print(el, el.IN_GROUP)
+#     print(g.groups)
