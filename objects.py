@@ -114,19 +114,18 @@ class Game:
         self.objects = []
         self.groups = []
         self.submitted = []
+        self.NOTE = ''
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
-        self.terminated = False
+        self.active = True
         self.command_handler = CommandHandler()
-        self.INITIAL_CONFIGS = {
-            'FIELD': deepcopy(self.field),
-            'OBJECTS': deepcopy(self.objects)
-        }
+        # self.INITIAL_CONFIGS = {
+        #     'FIELD': deepcopy(self.field),
+        #     'OBJECTS': deepcopy(self.objects)
+        # }
         self.command_history = []
-
         self.reset_multiline_cmds_mode()
-
         with open('options.json') as f:
             self.OPTIONS = json.load(f)
 
@@ -141,10 +140,8 @@ class Game:
         self.field = deepcopy(self.INITIAL_CONFIGS['FIELD'])
         self.objects = deepcopy(self.INITIAL_CONFIGS['OBJECTS'])
         self.command_history = []
-        self.victory = False
 
     def create_empty_field(self):
-        # loading field from .txt file
         self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(12)]
                                         for i in range(8)]
 
@@ -153,7 +150,8 @@ class Game:
             'unit': re.compile(r'^(\d \d) (\w+)( .+)?'),
             'groups': re.compile(r'^groups: ?\{([\[\] ,\d]+)\}'),
             'words': re.compile(r'^words: ?\{([A-Z .]+)\}'),
-            'letters': re.compile(r'^letters: ?\{([A-Z.]+)\}')
+            'letters': re.compile(r'^letters: ?\{([A-Z.]+)\}'),
+            'note': re.compile(r'^# ?(.*)')
         }
         pattern_integer_value = re.compile(r'(\w+)=(\w+)')
         pattern_str_value = re.compile(r"(\w+)='(\w+)'")
@@ -223,6 +221,8 @@ class Game:
                         self.WORDS = search_groups[0].split()
                     elif name == 'letters':
                         self.LETTERS = search_groups[0]
+                    elif name == 'note':
+                        self.NOTE = search_groups[0]
                     else:
                         raise UnmatchedCreationPattern
         # other groups
@@ -333,7 +333,7 @@ class Manipulator(Unit):
         self.holds = holds
 
     def __str__(self):
-        return f'M{self.direction}[{self.holds}]'
+        return f'M{self.direction}[{self.holds if self.holds is not None else ""}]'
 
     def c_rotate_clockwise(self):
         self.direction += 1
@@ -382,7 +382,7 @@ class ConveyorBelt(Container):
         self.orientation = orientation
 
     def __str__(self):
-        return f'C{self.orientation}[{self.holds}]'
+        return f'C{self.orientation}[{self.holds if self.holds is not None else ""}]'
 
     def c_shift_positive(self, game: Game):
         if self.orientation == 'h':
