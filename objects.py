@@ -114,7 +114,7 @@ class Game:
         self.objects = []
         self.groups = []
         self.submitted = []
-        self.NOTE = ''
+        self.NOTE = []
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
@@ -135,7 +135,7 @@ class Game:
 
     def is_victory(self):
         return ''.join(self.submitted) in self.WORDS
-    
+
     def reset_game(self):
         self.field = deepcopy(self.INITIAL_CONFIGS['FIELD'])
         self.objects = deepcopy(self.INITIAL_CONFIGS['OBJECTS'])
@@ -222,7 +222,7 @@ class Game:
                     elif name == 'letters':
                         self.LETTERS = search_groups[0]
                     elif name == 'note':
-                        self.NOTE = search_groups[0]
+                        self.NOTE.append(search_groups[0])
                     else:
                         raise UnmatchedCreationPattern
         # other groups
@@ -233,27 +233,6 @@ class Game:
                 )
                 self.objects[id].IN_GROUP = group_id
                 group_id += 1
-
-    def load_dummy_objects(self):
-        self.objects = [
-            Manipulator(0, (1, 0), 1),
-            ConveyorBelt(1, (1, 1)),
-            ConveyorBelt(2, (1, 2)),
-            Manipulator(3, (2, 2), 3),
-            Manipulator(4, (0, 0), 3),
-            Rock(5, (2, 3)),
-            Stack(6, (2, 0)),
-            InitStack(7, (3, 2), self.LETTERS),
-            Submitter(8, (1, 3), self.submitted)
-        ]
-
-    def create_dummy_groups(self):
-        self.groups = [
-            Group(id=0, units_type='conveyorbelt', units=[1, 2]),
-            Group(id=1, units_type='manipulator', units=[0]),
-            Group(id=2, units_type='manipulator', units=[3]),
-            Group(id=3, units_type='manipulator', units=[4]),
-        ]
 
     def fill_field(self):
         for obj in self.objects:
@@ -325,7 +304,7 @@ class Group:
 
 
 class Manipulator(Unit):
-    def __init__(self, id, pos, direction, holds=None, TYPE='manipulator', IN_GROUP=None, IS_MOVABLE=True,
+    def __init__(self, id, pos, direction=0, holds=None, TYPE='manipulator', IN_GROUP=None, IS_MOVABLE=True,
                  IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
@@ -442,7 +421,7 @@ class Stack(Container):
                 raise StackOverflow
         else:
             raise ObjectNotStackable
-    
+
     def flip(self):
         self.stack = self.stack[::-1]
 
@@ -460,13 +439,13 @@ class InitStack(Stack):
 
     def put_object(self, obj):
         raise InitStackPutObject
-    
+
     def flip(self):
         raise InitStackFlip
 
     def __str__(self):
         s = ''.join(map(lambda x: x.letter, self.stack))
-        return f'{s}'
+        return f'{"{"}{s}{"}"}'
 
 
 class Submitter(Container):
@@ -486,7 +465,7 @@ class Submitter(Container):
             self.submitted.append(obj.letter)
         else:
             raise NotCardSubmitted
-    
+
     def is_empty(self):
         return not bool(self.submitted)
 
@@ -510,13 +489,13 @@ class Flipper(Unit):
                 try:
                     game.field[position[0]][position[1]].contents.flip()
                 except AttributeError:
-                    raise ObjectUnflippable(f'Object {game.field[position[0]][position[1]].contents.TYPE} is unflippable')
+                    raise ObjectUnflippable(
+                        f'Object {game.field[position[0]][position[1]].contents.TYPE} is unflippable')
             else:
                 raise NothingToFlip('There is nothing there to flip')
         else:
-            raise FlippingOusideOfField('Trying to flip an object outside of the field')
-
-        
+            raise FlippingOusideOfField(
+                'Trying to flip an object outside of the field')
 
     def __str__(self):
         return f'F{self.direction}'
