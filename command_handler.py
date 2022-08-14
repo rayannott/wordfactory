@@ -1,4 +1,5 @@
-from exceptions import UnmatchedParentheses, IncorrectLoopSyntax, IncorrectReferencesSyntax, GroupInsideLoop
+from imaplib import Commands
+from exceptions import CommandSyntaxError, EmptyPrompt, UnmatchedParentheses, IncorrectLoopSyntax, IncorrectReferencesSyntax, GroupInsideLoop
 from utils import COMMAND_CHARACTERS
 import re
 
@@ -28,37 +29,38 @@ class CommandHandler:
         return not stack
 
     def __init__(self):
-        self.pattern_single_command = re.compile(r'(\d+)([a-z+-])')
         self.pattern_commands_on_single_group = re.compile(r'(\d+)([a-z+-]+)')
         self.pattern_groups = re.compile(r'\(([^\(\)]+)\)')
         self.pattern_loops = re.compile(r'(\d+)\[([^\[\]]+)\]')
         self.pattern_references = re.compile(r'#(\d+)')
         self.pattern_cmds = re.compile(r'(\d+)([trc+p])')
-
         self.reset()
 
-    def single_command(self, raw_text):
-        group_id_str, cmd_char = self.pattern_single_command.search(
-            raw_text).groups()
-        return (int(group_id_str), cmd_char)
-    
     def reset(self):
         self.result_to_display = []
         self.result = []
 
     def commands_on_single_group(self, raw_text):
-        group_id_str, cmd_char = self.pattern_commands_on_single_group.search(
-            raw_text).groups()
+        if not raw_text:
+            raise EmptyPrompt('There is nothing to execute')
+        try:
+            group_id_str, cmd_char = self.pattern_commands_on_single_group.search(
+                raw_text).groups()
+        except:
+            raise CommandSyntaxError(f'Syntax error: {raw_text}')
         group_id = int(group_id_str)
         return [(group_id, char) for char in cmd_char]
 
     def get_command_sequence(self, raw_text):
+        if not raw_text:
+            raise EmptyPrompt('There is nothing to execute')
         if not set('[]()').intersection(set(raw_text)):
             print('no loops and groups!')
             for raw_command in raw_text.split():
                 self.result.extend(self.commands_on_single_group(raw_command))
             print(self.result)
-            self.result_to_display = list(map(lambda x: f'{x[0]}{x[1]}', self.result))
+            self.result_to_display = list(
+                map(lambda x: f'{x[0]}{x[1]}', self.result))
         if not CommandHandler.valid_parentheses(raw_text):
             raise UnmatchedParentheses(
                 'Some parentheses are unmatched in the command')
