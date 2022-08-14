@@ -1,3 +1,4 @@
+# from copy import deepcopy
 from copy import deepcopy
 from types import SimpleNamespace
 import pygame
@@ -5,28 +6,43 @@ import pygame_gui
 from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIWindow
 from pygame_gui.windows import UIMessageWindow
 
-from objects import Game
+from objects import Cell, Game
 from exceptions import *
 from utils import *
 
 
 class UICell(UIButton):
-    def __init__(self, relative_rect, text, manager, OPTIONS, unit_id=None, group_id=None, **kwargs):
-        super().__init__(relative_rect, text, manager, **kwargs)
-        self.unit_id = unit_id
-        self.group_id = group_id
-        if OPTIONS['show_ids'] and self.unit_id is not None:
-            rect_unit_id = pygame.Rect(0, 0, 0, 0)
-            rect_unit_id.size = 30, 30
-            rect_unit_id.topleft = self.relative_rect.topleft
-            self.unit_id_textbox = UITextBox(
-                str(self.unit_id), rect_unit_id, manager)
+    def __init__(self, relative_rect, cell: Cell, manager, OPTIONS, **kwargs):
+        self.cell = cell
+        self.text = str(cell)
+        self.manager = manager
+        self.OPTIONS = OPTIONS
+        self.relative_rect = relative_rect
+        super().__init__(relative_rect, self.text, manager, **kwargs)
+
+        rect_group_id = pygame.Rect(0, 0, 0, 0)
+        rect_group_id.size = 30, 30
+        rect_group_id.topright = self.relative_rect.topright
+        self.group_id_textbox = UITextBox('', rect_group_id, self.manager)
+        self.group_id_textbox.hide()
+
+    def update(self, time_delta):
+        self.set_text(str(self.cell))
+        # self.unit_id = None if self.cell.contents is None else self.cell.contents.id
+        # if self.OPTIONS['show_ids'] and self.unit_id is not None:
+        #     rect_unit_id = pygame.Rect(0, 0, 0, 0)
+        #     rect_unit_id.size = 30, 30
+        #     rect_unit_id.topleft = self.relative_rect.topleft
+        #     self.unit_id_textbox = UITextBox(
+        #         str(self.unit_id), rect_unit_id, self.manager)
+
+        self.group_id = None if self.cell.contents is None else self.cell.contents.IN_GROUP
         if self.group_id is not None:
-            rect_group_id = pygame.Rect(0, 0, 0, 0)
-            rect_group_id.size = 30, 30
-            rect_group_id.topright = self.relative_rect.topright
-            self.group_id_textbox = UITextBox(
-                str(self.group_id), rect_group_id, manager)
+            self.group_id_textbox.set_text(str(self.group_id))
+            self.group_id_textbox.show()
+        else:
+            self.group_id_textbox.hide()
+        return super().update(time_delta)
 
 
 class FieldPanel(UIPanel):
@@ -43,26 +59,25 @@ class FieldPanel(UIPanel):
         self.field = field
         for i in range(8):
             for j in range(12):
-                self.cells[i][j].set_text(str(field[i][j]))
+                # self.cells[i][j].update_uicell(self.field[i][j])
+                self.cells[i][j].cell = field[i][j]
+                # self.cells[i][j].update_uicell()
 
     def create_cells(self):
         margin = 3
         start_x = 200 + margin
         start_y = 0 + margin
         self.cells = [[UICell(relative_rect=pygame.Rect((start_x + j*(margin + CELL_SIZE[0]), start_y + i*(margin + CELL_SIZE[1])), CELL_SIZE),
-                              text=str(self.field[i][j]),
+                              cell=self.field[i][j],
                               manager=self.manager,
-                              OPTIONS=self.OPTIONS,
-                              unit_id=None if self.field[i][j].contents is None else self.field[i][j].contents.id,
-                              group_id=None if self.field[i][j].contents is None else self.field[i][j].contents.IN_GROUP) for j in range(12)] for i in range(8)]
+                              OPTIONS=self.OPTIONS) for j in range(12)] for i in range(8)]
 
-    def process_event(self, event: pygame.event.Event) -> bool:
+    def process_event(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             for i, cells_row in enumerate(self.cells):
                 for j, cell in enumerate(cells_row):
                     if event.ui_element == cell:
-                        print(i, j, self.field[i][j], type(
-                            self.field[i][j].contents))
+                        print(self.field[i][j].contents.describe() if self.field[i][j].contents is not None else f'pos={self.field[i][j].pos} empty cell')
         return super().process_event(event)
 
 
@@ -77,15 +92,18 @@ class CommandInput(UITextEntryLine):
 
 class CommandFeedback(UITextBox):
     def __init__(self, manager, *args, **kwargs):
-        rect = pygame.Rect((198, 714), (1002, 70))
+        rect = pygame.Rect((198, 714), (1002, 82))
         super().__init__('', rect, manager, *args, **kwargs)
 
 
 class LogTextBox(UITextBox):
     def __init__(self, manager, **kwargs):
         self.text = ''
-        rect = pygame.Rect((1, 1), (198, 600))
+        rect = pygame.Rect((1, 1), (198, 796))
         super().__init__(self.text, rect, manager, **kwargs)
+
+    def log(self, text):
+        self.append_html_text(text)
 
 
 class LettersSubmittedPanel(UIPanel):
@@ -97,12 +115,14 @@ class LettersStackPanel(UIPanel):
 
 
 class WinMessage(UIMessageWindow):
-    def __init__(self, manager, words, submitted_word, *args, **kwargs):
-        rect = pygame.Rect((200, 200), (300, 200))
+    def __init__(self, manager, words, submitted_word, command_history, *args, **kwargs):
+        rect = pygame.Rect((200, 200), (600, 400))
         rect.center = (600, 400)
         to_show = [f'<font color=#4DE37C>{word}</font>' if word ==
                    submitted_word else word for word in words]
-        html_message = 'You won!<br>' + ' '.join(to_show)
+        html_message = 'You won!<br>' + \
+            ' '.join(to_show) + '<br>' + 'Commands:<br>' + \
+            ' '.join(command_history)
         super().__init__(rect, html_message, manager, *args, **kwargs)
 
 
@@ -113,72 +133,109 @@ class Gui(Game):
         self.field_panel = FieldPanel(
             self.ui_manager, self.field, self.OPTIONS)
         self.command_input = CommandInput(self.ui_manager)
+      
         self.command_feedback = CommandFeedback(self.ui_manager)
         self.logs = LogTextBox(self.ui_manager)
+        words_str = paint(' '.join(self.WORDS), '#E9D885')
+        self.logs.log(f'words:<br>{words_str}<br>')
+        
+    
+    def reset_game(self):
+        super().reset_game()
+        self.field_panel = FieldPanel(
+            self.ui_manager, self.field, self.OPTIONS)
+
+    
 
     def show_win_message(self):
-        return WinMessage(self.ui_manager, self.WORDS, ''.join(self.submitted))
+        return WinMessage(self.ui_manager, self.WORDS, ''.join(self.submitted), command_history=self.command_history)
+
+    def log_warning(self, w):
+        self.logs.log(paint(f'{w.__class__.__name__} warning:<br>', '#F0BF0D'))
+        self.logs.log(paint(f'[{w}]<br>'))
+
+    def process_exception(self, e):
+        self.log_exception(e)
+        self.reset_game()
+
+    def log_exception(self, e):
+        self.logs.log(paint(f'{e.__class__.__name__} exception:<br>', '#FF0000'))
+        self.logs.log(paint(f'[{e}]<br>'))
+
+    def try_execute_on_group(self, command):
+        try:
+            self.execute_on_group(command)
+        except Warning as w:
+            self.log_warning(w)
+        except CustomException as e:
+            self.process_exception(e)
 
     def process_event(self, event):
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                self.command_input.unfocus()
-            elif event.key == pygame.K_SLASH:
+            if event.key == pygame.K_SLASH:
                 self.command_input.focus()
             elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN and pygame.key.get_mods() & pygame.KMOD_SHIFT:
-                # compile commands
-                self.multiple_cmds_mode.is_active = True
-                self.command_input.unfocus()
-
+                # compile commands and activate multiple_cmds_mode
                 raw_commands = self.command_input.get_text()
-                self.command_history.append(raw_commands)
                 self.command_input.set_text('')
-                self.command_handler.get_command_sequence(raw_commands)
-
-                self.multiple_cmds_mode.commands = self.command_handler.result
-                self.multiple_cmds_mode.commands_to_display = self.command_handler.result_to_display
-            elif self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
-                this_command = self.multiple_cmds_mode.commands[self.multiple_cmds_mode.current_cmd_index]
-                print(this_command)
                 try:
-                    self.execute_on_group(this_command)
-                except Warning as e:
-                    print(e)
-                    self.logs.append_html_text('warning<br>')
-
+                    self.command_handler.get_command_sequence(raw_commands)
+                    self.multiple_cmds_mode.commands = self.command_handler.result
+                    self.multiple_cmds_mode.commands_to_display = self.command_handler.result_to_display
+                    self.command_history.append(raw_commands)
+                    self.multiple_cmds_mode.is_active = True
+                    self.command_input.unfocus()
+                except Warning as w:
+                    self.log_warning(w)
+                except CustomException as e:
+                    self.process_exception(e)
+            elif self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
+                # do one step in a sequence in multiple_cmd_mode
+                this_command = self.multiple_cmds_mode.commands[self.multiple_cmds_mode.current_cmd_index]
+                self.try_execute_on_group(this_command)
                 self.multiple_cmds_mode.current_cmd_index += 1
+
                 if len(self.multiple_cmds_mode.commands) <= self.multiple_cmds_mode.current_cmd_index:
                     print('finish')
+                    self.command_input.focus()
                     self.command_feedback.set_text('')
-                    self.multiple_cmds_mode = SimpleNamespace(
-                        is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
+                    self.reset_multiline_cmds_mode()
                     self.command_handler.reset()
+            elif self.multiple_cmds_mode.is_active and event.key == pygame.K_ESCAPE:
+                print('multiline_mode off')
+                self.command_feedback.set_text('')
+                self.reset_multiline_cmds_mode()
+                self.command_handler.reset()
+            elif event.key == pygame.K_ESCAPE:
+                self.command_input.unfocus()
             elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
+                # insert previous prompt
                 self.command_input.set_text(self.command_history[-1])
             elif event.key == pygame.K_RETURN:
-                # run one command
+                # run one single command
                 raw_command = self.command_input.get_text()
-                single_command = self.command_handler.single_command(
-                    raw_command)
                 try:
-                    self.execute_on_group(single_command)
-                except Warning as e:
-                    print(e)
-                    self.logs.append_html_text('warning<br>')
-                # self.command_feedback.append_html_text(command + ' ')
-                # except Exception as e:
-                #     print(e)
-                #     self.logs.append_html_text('error')
-                #     # self.field = deepcopy(self.field_initial_config)
-                #     self.command_feedback.set_text('')
-            # TODO: shift + Return = run programm
+                    single_command = self.command_handler.commands_on_single_group(
+                        raw_command)[0]
+                    self.try_execute_on_group(single_command)
+                except Warning as w:
+                    self.log_warning(w)
+            elif event.key == pygame.K_i: # TODO: only when command_input is unfocused
+                # print info about all objects
+                for obj in self.objects:
+                    print(obj.describe())
+                print(self.command_history)
+            elif event.key == pygame.K_DELETE:
+                print('reset_game')
+                self.logs.log('reset game<br>')
+                self.reset_game()
         if not self.victory:
             self.update()
 
     def update(self):
         self.field_panel.update_field(self.field)
         if self.multiple_cmds_mode.is_active:
-            to_display = [f'<font color=#F1E970>{cmd}</font>' if i == self.multiple_cmds_mode.current_cmd_index
+            to_display = [paint(cmd, '#F1E970') if i == self.multiple_cmds_mode.current_cmd_index
                           else cmd for i, cmd in enumerate(self.multiple_cmds_mode.commands_to_display)]
             self.command_feedback.set_text(' '.join(to_display))
         if self.is_victory():
@@ -195,7 +252,7 @@ def main():
     background.fill(pygame.Color('#000000'))
     manager = pygame_gui.UIManager(window_size)
 
-    level_file = 'level_files/level2.txt'
+    level_file = 'level_files/level_.txt'
     game = Gui(manager, level_file)
     clock = pygame.time.Clock()
     is_running = True
@@ -209,7 +266,6 @@ def main():
             manager.process_events(event)
 
         manager.update(time_delta)
-        # game.update()
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
