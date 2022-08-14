@@ -1,81 +1,146 @@
-class Warning(Exception):
+class CustomException(Exception):
     pass
+
+
+class Warning(CustomException):
+    pass
+
+class CommandWarning(Warning):
+    pass
+
+
+class CommandException(CustomException):
+    pass
+
+# ........
+
+class NonExistingGroup(Warning):
+    pass
+
+class ImmovableUnit(Warning):
+    pass
+
 
 class EmptyHand(Warning):
     pass
 
+
 class TakingFromEmptyCell(Warning):
     pass
+
 
 class TakingFromOusideOfField(Warning):
     pass
 
+
 class HandNotEmpty(Warning):
     pass
 
-class OccupiedContainer(Exception):
-    pass
 
-class OccupiedCell(Exception):
-    pass
-
-class EmptyCell(Exception):
-    pass
-
-class ImmovableUnit(Exception):
-    pass
-
-class ControllableIsInsideContainer(Exception):
-    pass
-
-class OutsideOfField(Exception):
+class FlippingOusideOfField(Warning):
     pass
 
 
-class UnknownCommand(Exception):
+class NothingToFlip(Warning):
     pass
 
 
-class StackOverflow(Exception):
-    pass
-
-class InitStackPutObject(Exception):
+class ObjectUnflippable(Warning):
     pass
 
 
-class ObjectNotStackable(Exception):
+class OccupiedContainer(CustomException):
     pass
 
-class NotCardSubmitted(Exception):
+
+class OccupiedCell(CustomException):
+    pass
+
+
+class EmptyCell(CustomException):
+    pass
+
+
+class ControllableIsInsideContainer(CustomException):
+    pass
+
+
+class OutsideOfField(CustomException):
+    pass
+
+
+class UnknownCommand(CustomException):
+    pass
+
+
+class StackOverflow(CustomException):
+    pass
+
+
+class InitStackPutObject(CustomException):
+    pass
+
+
+class SubmitterTakeObject(CustomException):
+    pass
+
+
+class InitStackFlip(CustomException):
+    pass
+
+
+class ObjectNotStackable(CustomException):
+    pass
+
+
+class NotCardSubmitted(CustomException):
+    pass
+
+
+class PutOutsideOfField(CustomException):
     pass
 
 # ...
 
-class UnmatchedCreationPattern(Exception):
+
+class LevelCreationError(CustomException):
     pass
 
-class GroupOfDifferentTypes(Exception):
+
+class UnmatchedCreationPattern(LevelCreationError):
     pass
 
-class PutOutsideOfField(Exception):
+
+class GroupOfDifferentTypes(LevelCreationError):
     pass
+
 
 # ...
 
 
-class CommandException(Exception):
+class UnmatchedParentheses(CommandWarning):
     pass
 
 
-class UnmatchedParentheses(CommandException):
+class IncorrectLoopSyntax(CommandWarning):
     pass
 
 
-class IncorrectLoopSyntax(CommandException):
+class IncorrectReferencesSyntax(CommandWarning):
     pass
 
-class IncorrectReferencesSyntax(CommandException):
+
+class GroupInsideLoop(CommandWarning):
     pass
 
-class GroupInsideLoop(CommandException):
+
+class EmptyPrompt(CommandWarning):
+    pass
+
+
+class UnknownCommand(CommandWarning):
+    pass
+
+
+class CommandSyntaxError(CommandWarning):
     pass
