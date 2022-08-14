@@ -2,3 +2,5 @@ venv/
 level.txt
 desktop.ini
 level_files/
+__pycache__/
+
