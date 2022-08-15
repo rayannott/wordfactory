@@ -52,6 +52,8 @@ class ObjectUnflippable(Warning):
 class OccupiedContainer(CustomException):
     pass
 
+class OccupiedPortal(CustomException):
+    pass
 
 class OccupiedCell(CustomException):
     pass
