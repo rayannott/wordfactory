@@ -3,9 +3,13 @@ DIRECTIONS = {
     # up right down left
 }
 WINDOW_SIZE = (1200, 800)
-CELL_SIZE = (80, 80)
+CELL_SIZE = (100, 100)
+MARGIN = 3
+BOARD_SIZE = (6, 8)
+GROUP_ID_TEXTBOX_SIZE = (30, 30)
 # COMMAND_INPUT_ALLOWED_CHARS = list('0123456789tpcrf+- ')
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
+COMMAND_INPUT_HEIGHT = 40
 
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'swapper'}
 
