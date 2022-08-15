@@ -30,16 +30,6 @@ class Unit:
         return f'id={self.id} group_id={self.IN_GROUP} pos={self.pos} type={self.TYPE} controllable={self.IS_CONTROLLABLE} object={self}'
 
 
-class Card(Unit):
-    def __init__(self, id, pos, letter, TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
-                         IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
-        self.letter = letter
-
-    def __str__(self):
-        return f"'{self.letter}'"
-
-
 class Container(Unit):
     def __init__(self, id, pos, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
@@ -63,6 +53,14 @@ class Container(Unit):
             self.holds = obj
         else:
             raise OccupiedContainer
+
+
+class Coupled(Container):
+    def __init__(self, id, pos, COUPLE_ID, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
+        self.COUPLE_ID = COUPLE_ID
+        self.COUPLE: Coupled = None
+        super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
 
 
 class Cell:
@@ -142,8 +140,9 @@ class Game:
         self.command_history = []
 
     def create_empty_field(self):
-        self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(12)]
-                                        for i in range(8)]
+        # TODO: edit board_size 8x12 -> 6x10
+        self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(BOARD_SIZE[1])]
+                                        for i in range(BOARD_SIZE[0])]
 
     def load_objects_from_txt(self, instruction_file):
         patterns = {
@@ -160,7 +159,8 @@ class Game:
             'ConveyorBelt': ConveyorBelt,
             'Stack': Stack,
             'Rock': Rock,
-            'Flipper': Flipper
+            'Flipper': Flipper,
+            'Portal': Portal
         }
         group_id = 0
         unit_id = 0
@@ -225,6 +225,10 @@ class Game:
                         self.NOTE.append(search_groups[0])
                     else:
                         raise UnmatchedCreationPattern
+        # coupled objects:
+        for obj in self.objects:
+            if isinstance(obj, Coupled):
+                obj.COUPLE = self.objects[obj.COUPLE_ID]
         # other groups
         for id, unit in enumerate(self.objects):
             if unit.TYPE in CONTROLLABLE_UNITS and unit.IN_GROUP is None:
@@ -290,8 +294,8 @@ class Game:
         self.push_all()
 
     def push_all(self):
-        for i in range(8):
-            for j in range(12):
+        for i in range(BOARD_SIZE[0]):
+            for j in range(BOARD_SIZE[1]):
                 self.field[i][j].push()
 
 
@@ -301,6 +305,16 @@ class Group:
         self.units_type = units_type
         self.units = units  # units' ids
         self.IS_COUPLED = IS_COUPLED
+
+
+class Card(Unit):
+    def __init__(self, id, pos, letter, TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
+                         IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.letter = letter
+
+    def __str__(self):
+        return f"'{self.letter}'"
 
 
 class Manipulator(Unit):
@@ -396,6 +410,31 @@ class ConveyorBelt(Container):
         else:
             raise PutOutsideOfField(
                 'Trying to put outside of the field borders')
+
+    def flip(self):
+        if self.orientation == 'h':
+            self.orientation = 'v'
+        else:
+            self.orientation = 'h'
+
+
+class Portal(Coupled):
+    def __init__(self, id, pos, COUPLE_ID, TYPE='Portal', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
+        super().__init__(id, pos, COUPLE_ID, TYPE, holds, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+
+    def put_object(self, obj: Unit):
+        self.send(obj)
+
+    def send(self, obj):
+        if self.COUPLE.is_empty():
+            self.COUPLE.holds = obj
+            self.holds = None
+        else:
+            raise OccupiedPortal('That portal is occupied')
+
+    def __str__(self):
+        return f'{self.id}{self.COUPLE_ID}[{self.holds if self.holds is not None else ""}]'
 
 
 class Stack(Container):
@@ -496,6 +535,10 @@ class Flipper(Unit):
         else:
             raise FlippingOusideOfField(
                 'Trying to flip an object outside of the field')
+
+    def flip(self):
+        self.direction += 1
+        self.direction %= 4
 
     def __str__(self):
         return f'F{self.direction}'
