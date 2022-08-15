@@ -19,9 +19,8 @@ class UICell(UIButton):
         self.OPTIONS = OPTIONS
         self.relative_rect = relative_rect
         super().__init__(relative_rect, self.text, manager, **kwargs)
-
         rect_group_id = pygame.Rect(0, 0, 0, 0)
-        rect_group_id.size = 30, 30
+        rect_group_id.size = GROUP_ID_TEXTBOX_SIZE
         rect_group_id.topright = self.relative_rect.topright
         self.group_id_textbox = UITextBox('', rect_group_id, self.manager)
         self.group_id_textbox.hide()
@@ -34,6 +33,7 @@ class UICell(UIButton):
             self.group_id_textbox.show()
         else:
             self.group_id_textbox.hide()
+
         return super().update(time_delta)
 
 
@@ -42,30 +42,34 @@ class FieldPanel(UIPanel):
         self.OPTIONS = OPTIONS
         self.manager = manager
         self.field = field
-        field_panel_rect = pygame.Rect(
-            (198, 1), (1000, 670))
-        super().__init__(field_panel_rect, starting_layer_height=0, manager=manager, **kwargs)
+        self.field_panel_rect = pygame.Rect(0, 0, 0, 0)
+        # self.field_panel_rect.size = (160, 120)
+        self.field_panel_rect.size = (
+            ((BOARD_SIZE[1] + 3)*MARGIN + BOARD_SIZE[1]*CELL_SIZE[1]),  (BOARD_SIZE[0] + 3)*MARGIN + BOARD_SIZE[0]*CELL_SIZE[0])
+        # self.field_panel_rect.topleft = (200, 0)
+        self.field_panel_rect.topright = (WINDOW_SIZE[0]-MARGIN, MARGIN)
+        super().__init__(self.field_panel_rect,
+                         starting_layer_height=0, manager=manager, **kwargs)
         self.create_cells()
 
     def update_field(self, field):
         self.field = field
-        for i in range(8):
-            for j in range(12):
+        for i in range(BOARD_SIZE[0]):
+            for j in range(BOARD_SIZE[1]):
                 self.cells[i][j].cell = field[i][j]
 
     def disable_uicells(self):
-        for i in range(8):
-            for j in range(12):
+        for i in range(BOARD_SIZE[0]):
+            for j in range(BOARD_SIZE[1]):
                 self.cells[i][j].disable()
 
     def create_cells(self):
-        margin = 3
-        start_x = 198 + margin
-        start_y = 0 + margin
-        self.cells = [[UICell(relative_rect=pygame.Rect((start_x + j*(margin + CELL_SIZE[0]), start_y + i*(margin + CELL_SIZE[1])), CELL_SIZE),
+        start_x, start_y = (
+            self.field_panel_rect.topleft[0] + 2*MARGIN, self.field_panel_rect.topleft[1] + 2*MARGIN)
+        self.cells = [[UICell(relative_rect=pygame.Rect((start_x + j*(MARGIN + CELL_SIZE[0]), start_y + i*(MARGIN + CELL_SIZE[1])), CELL_SIZE),
                               cell=self.field[i][j],
                               manager=self.manager,
-                              OPTIONS=self.OPTIONS) for j in range(12)] for i in range(8)]
+                              OPTIONS=self.OPTIONS) for j in range(BOARD_SIZE[1])] for i in range(BOARD_SIZE[0])]
 
     def process_event(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
@@ -78,23 +82,31 @@ class FieldPanel(UIPanel):
 
 
 class CommandInput(UITextEntryLine):
-    def __init__(self, manager, *args, **kwargs):
-        rect = pygame.Rect((198, 672), (1000, 40))
+    def __init__(self, manager, field_panel_rect, *args, **kwargs):
+        rect = pygame.Rect((0, 0, 0, 0))
+        rect.size = (field_panel_rect.size[0], COMMAND_INPUT_HEIGHT)
+        rect.topright = field_panel_rect.bottomright
+        print('size', rect.size)
         super().__init__(rect, manager, *args, **kwargs)
-        # self.set_allowed_characters(COMMAND_INPUT_ALLOWED_CHARS)
         self.set_forbidden_characters(COMMAND_INPUT_FORBIDDEN_CHARS)
 
 
 class CommandFeedback(UITextBox):
-    def __init__(self, manager, *args, **kwargs):
-        rect = pygame.Rect((198, 714), (1000, 82))
+    def __init__(self, manager, field_panel_rect, command_input_rect, *args, **kwargs):
+        rect = pygame.Rect((0, 0, 0, 0))
+        rect.size = (field_panel_rect.size[0], WINDOW_SIZE[1] -
+                     field_panel_rect.size[1] - COMMAND_INPUT_HEIGHT - MARGIN * 2)
+        rect.topright = command_input_rect.bottomright
         super().__init__('', rect, manager, *args, **kwargs)
 
 
 class LogTextBox(UITextBox):
-    def __init__(self, manager, **kwargs):
+    def __init__(self, manager, field_panel_rect: pygame.Rect, **kwargs):
         self.text = ''
-        rect = pygame.Rect((1, 1), (198, 796))
+        rect = pygame.Rect((0, 0, 0, 0))
+        rect.size = (WINDOW_SIZE[0] - field_panel_rect.size[0] -
+                     MARGIN * 2, field_panel_rect.size[1])
+        rect.topright = field_panel_rect.topleft
         super().__init__(self.text, rect, manager, **kwargs)
 
     def log(self, text):
@@ -127,19 +139,18 @@ class Gui(Game):
         self.ui_manager = ui_manager
         self.field_panel = FieldPanel(
             self.ui_manager, self.field, self.OPTIONS)
-        self.command_input = CommandInput(self.ui_manager)
+        self.logs = LogTextBox(self.ui_manager, self.field_panel.rect)
+        self.command_input = CommandInput(
+            self.ui_manager, self.field_panel.rect)
         self.command_input.focus()
+        self.command_feedback = CommandFeedback(self.ui_manager, self.field_panel.rect, self.command_input.rect)
 
-        self.command_feedback = CommandFeedback(self.ui_manager)
-        self.logs = LogTextBox(self.ui_manager)
         words_str = paint(' '.join(self.WORDS), '#E9D885')
-
         self.logs.log(
             f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>')
         if self.NOTE:
             self.logs.log(
-                    f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>')
-                
+                f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>')
 
     def reset_game_gui(self):
         # really prone to bugs
@@ -227,7 +238,7 @@ class Gui(Game):
                     # print info about all objects
                     for obj in self.objects:
                         print(obj.describe())
-                    print(self.command_history)
+                    print('commands:', ' '.join(self.command_history))
                 elif event.key == pygame.K_DELETE:
                     pass
                     # print('reset_game')
@@ -243,7 +254,7 @@ class Gui(Game):
             self.command_input.disable()
             self.command_feedback.disable()
             # self.field_panel.disable_uicells()
-            print(self.command_history)
+            print('commands:', ' '.join(self.command_history))
             self.active = False
         else:
             self.field_panel.update_field(self.field)
@@ -256,14 +267,14 @@ class Gui(Game):
 def main():
     pygame.init()
     pygame.display.set_caption('Word Factory')
-    window_surface = pygame.display.set_mode((1200, 800))
+    window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
     window_size = window_surface.get_rect().size
     background = pygame.Surface(window_size)
     background.fill(pygame.Color('#000000'))
 
     manager = pygame_gui.UIManager(window_size)
 
-    level_file = 'level_files/level7.txt'
+    level_file = 'level_files/level_.txt'
     game = Gui(manager, level_file)
     clock = pygame.time.Clock()
     is_running = True
