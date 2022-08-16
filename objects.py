@@ -123,13 +123,11 @@ class Game:
         #     'OBJECTS': deepcopy(self.objects)
         # }
         self.command_history = []
-        self.reset_multiline_cmds_mode()
+        
         with open('options.json') as f:
             self.OPTIONS = json.load(f)
 
-    def reset_multiline_cmds_mode(self):
-        self.multiple_cmds_mode = SimpleNamespace(
-            is_active=False, commands=[], commands_to_display=[], current_cmd_index=0)
+    
 
     def is_victory(self):
         return ''.join(self.submitted) in self.WORDS
@@ -419,7 +417,7 @@ class ConveyorBelt(Container):
 
 
 class Portal(Coupled):
-    def __init__(self, id, pos, COUPLE_ID, TYPE='Portal', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
+    def __init__(self, id, pos, COUPLE_ID, TYPE='portal', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
         super().__init__(id, pos, COUPLE_ID, TYPE, holds, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
 

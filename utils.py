@@ -24,6 +24,7 @@ COMMAND_CHARACTERS = {
 }
 
 
+
 def inside_borders(pos):
     row, col = pos
     M, N = (12, 8)
