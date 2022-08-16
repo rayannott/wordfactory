@@ -5,6 +5,7 @@ class CustomException(Exception):
 class Warning(CustomException):
     pass
 
+
 class CommandWarning(Warning):
     pass
 
@@ -14,8 +15,10 @@ class CommandException(CustomException):
 
 # ........
 
+
 class NonExistingGroup(Warning):
     pass
+
 
 class ImmovableUnit(Warning):
     pass
@@ -49,11 +52,23 @@ class ObjectUnflippable(Warning):
     pass
 
 
+class PushingFieldBorders(Warning):
+    pass
+
+class PushingOutsideOfField(CustomException):
+    pass
+
 class OccupiedContainer(CustomException):
     pass
 
+
 class OccupiedPortal(CustomException):
     pass
+
+
+class CoupledPortalInsideContainer(CustomException):
+    pass
+
 
 class OccupiedCell(CustomException):
     pass
@@ -117,14 +132,18 @@ class GroupOfDifferentTypes(LevelCreationError):
     pass
 
 
+class SubmitterNotFound(LevelCreationError):
+    pass
 # ...
 
 
 class UnmatchedParentheses(CommandWarning):
     pass
 
+
 class CommandSyntaxError(CommandWarning):
     pass
+
 
 class IncorrectLoopSyntax(CommandSyntaxError):
     pass
