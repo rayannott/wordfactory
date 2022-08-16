@@ -1,0 +1,35 @@
+{
+    "@Centered": {
+        "misc": {
+            "text_horiz_alignment": "center"
+        }
+    },
+    "#Manipulator": {
+        "images": {
+            "normal_image": {
+                "path": "assets/manipulator_0.png"
+            }
+        }
+    },
+    "#Portal": {
+        "images": {
+            "normal_image": {
+                "path": "assets/portal.png"
+            }
+        }
+    },
+    "#EMPTY": {
+        "images": {
+            "normal_image": {
+                "path": "assets/empty.png"
+            }
+        }
+    },
+    "#OTHER": {
+        "images": {
+            "normal_image": {
+                "path": "assets/other.png"
+            }
+        }
+    }
+}
