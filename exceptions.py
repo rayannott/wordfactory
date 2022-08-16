@@ -123,17 +123,19 @@ class GroupOfDifferentTypes(LevelCreationError):
 class UnmatchedParentheses(CommandWarning):
     pass
 
+class CommandSyntaxError(CommandWarning):
+    pass
 
-class IncorrectLoopSyntax(CommandWarning):
+class IncorrectLoopSyntax(CommandSyntaxError):
     pass
 
 
-class IncorrectReferencesSyntax(CommandWarning):
+class IncorrectReferencesSyntax(CommandSyntaxError):
     pass
 
 
-class GroupInsideLoop(CommandWarning):
-    pass
+# class GroupInsideLoop(CommandWarning):
+#     pass
 
 
 class EmptyPrompt(CommandWarning):
@@ -144,5 +146,5 @@ class UnknownCommand(CommandWarning):
     pass
 
 
-class CommandSyntaxError(CommandWarning):
+class NotASingleCommand(CommandWarning):
     pass

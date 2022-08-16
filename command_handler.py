@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from exceptions import CommandSyntaxError, EmptyPrompt, UnmatchedParentheses, IncorrectLoopSyntax, IncorrectReferencesSyntax, GroupInsideLoop
+from exceptions import CommandSyntaxError, EmptyPrompt, NotASingleCommand, UnmatchedParentheses, IncorrectLoopSyntax, IncorrectReferencesSyntax
 from utils import COMMAND_CHARACTERS
 import re
 
@@ -33,7 +33,7 @@ class CommandHandler:
         self.pattern_groups = re.compile(r'\(([^\(\)]+)\)')
         self.pattern_loops = re.compile(r'(\d+)\[([^\[\]]+)\]')
         self.pattern_references = re.compile(r'#(\d+)')
-        self.pattern_cmds = re.compile(r'(\d+)([a-z+-])')
+        self.pattern_cmds = re.compile(r'(\d+)([a-z+-])$')
 
     def commands_on_single_group(self, raw_text):
         if not raw_text:
