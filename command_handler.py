@@ -1,15 +1,6 @@
 from types import SimpleNamespace
 from exceptions import CommandSyntaxError, EmptyPrompt, NotASingleCommand, UnmatchedParentheses, IncorrectLoopSyntax, IncorrectReferencesSyntax
-from utils import COMMAND_CHARACTERS
 import re
-
-'''
-'1tcp 3+-' -> 1t 1c 1p 3+ 3- -> [(1, 't'), (1, 't'), (1, 'c'), (1, 'p'), (3, '+'), (3, '-')]
-'3[2t]' -> 2t 2t 2t -> [(2, 't'), (2, 't'), (2, 't')]
-'2[1+ 3tp] 1-' -> 1+ 3t 3p 1+ 3t 3p 1- -> ...
-'1t (3+ 1p) 1c #1' -> 1t 3+ 1p 1c 3+ 1p -> ..
-'(2t) 1- (2r 2c) 2[#1 1+ #2]' -> 2t 1- 2r 2c 2t 1+ 2r 2c 2t 1+ 2r 2c -> ...
-'''
 
 
 class CommandHandler:
