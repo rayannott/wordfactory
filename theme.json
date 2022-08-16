@@ -4,17 +4,87 @@
             "text_horiz_alignment": "center"
         }
     },
-    "#Manipulator": {
+    "#manipulator_0": {
         "images": {
             "normal_image": {
                 "path": "assets/manipulator_0.png"
             }
         }
     },
-    "#Portal": {
+    "#manipulator_1": {
+        "images": {
+            "normal_image": {
+                "path": "assets/manipulator_1.png"
+            }
+        }
+    },
+    "#manipulator_2": {
+        "images": {
+            "normal_image": {
+                "path": "assets/manipulator_2.png"
+            }
+        }
+    },
+    "#manipulator_3": {
+        "images": {
+            "normal_image": {
+                "path": "assets/manipulator_3.png"
+            }
+        }
+    },
+    "#portal": {
         "images": {
             "normal_image": {
                 "path": "assets/portal.png"
+            }
+        }
+    },
+    "#submitter": {
+        "images": {
+            "normal_image": {
+                "path": "assets/submitter.png"
+            }
+        }
+    },
+    "#stack": {
+        "images": {
+            "normal_image": {
+                "path": "assets/stack.png"
+            }
+        }
+    },
+    "#initstack": {
+        "images": {
+            "normal_image": {
+                "path": "assets/initstack.png"
+            }
+        }
+    },
+    "#conveyorbelt_h": {
+        "images": {
+            "normal_image": {
+                "path": "assets/conveyorbelt_h.png"
+            }
+        }
+    },
+    "#conveyorbelt_v": {
+        "images": {
+            "normal_image": {
+                "path": "assets/conveyorbelt_v.png"
+            }
+        }
+    },
+    "#flipper": {
+        "images": {
+            "normal_image": {
+                "path": "assets/flipper.png"
+            }
+        }
+    },
+    "#rock": {
+        "images": {
+            "normal_image": {
+                "path": "assets/rock.png"
             }
         }
     },
