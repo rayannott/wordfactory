@@ -312,7 +312,7 @@ class Card(Unit):
         self.letter = letter
 
     def __str__(self):
-        return f"'{self.letter}'"
+        return f"{self.letter}"
 
 
 class Manipulator(Unit):
@@ -324,7 +324,7 @@ class Manipulator(Unit):
         self.holds = holds
 
     def __str__(self):
-        return f'M{self.direction}[{self.holds if self.holds is not None else ""}]'
+        return f'M[{self.holds}]' if self.holds is not None else 'M'
 
     def c_rotate_clockwise(self):
         self.direction += 1
@@ -373,7 +373,7 @@ class ConveyorBelt(Container):
         self.orientation = orientation
 
     def __str__(self):
-        return f'C{self.orientation}[{self.holds if self.holds is not None else ""}]'
+        return f'C[{self.holds}]' if self.holds is not None else 'C'
 
     def c_shift_positive(self, game: Game):
         if self.orientation == 'h':
