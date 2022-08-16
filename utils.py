@@ -7,11 +7,11 @@ CELL_SIZE = (100, 100)
 MARGIN = 3
 BOARD_SIZE = (6, 8)
 GROUP_ID_TEXTBOX_SIZE = (30, 30)
-# COMMAND_INPUT_ALLOWED_CHARS = list('0123456789tpcrf+- ')
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 
-CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'swapper'}
+UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper', 'submitter'}
+CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper'}
 
 COMMAND_CHARACTERS = {
     't': None,
@@ -24,11 +24,9 @@ COMMAND_CHARACTERS = {
 }
 
 
-
 def inside_borders(pos):
     row, col = pos
-    M, N = (12, 8)
-    return 0 <= row < M and 0 <= col < N
+    return 0 <= row < BOARD_SIZE[0] and 0 <= col < BOARD_SIZE[1]
 
 
 def paint(s: str, color: str = '#FFFFFF', size=4):
@@ -37,5 +35,3 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
     return f'<font color={color} size={size}>{s}</font>'
 
-# level2 COAT sol: 1tcpr 0+ 2trpc 1tccprrtcpr 0+ 2tcpr 1tcpc 0+ 2trpc 1trp 0+ 2trpcctccp
-# level1 CAT sol: 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc 1tcpr 0+ 2trpc
