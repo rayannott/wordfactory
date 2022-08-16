@@ -28,19 +28,22 @@ class UICell(UIButton):
         rect_group_id = pygame.Rect(0, 0, 0, 0)
         rect_group_id.size = GROUP_ID_TEXTBOX_SIZE
         rect_group_id.topright = self.relative_rect.topright
-        self.group_id_textbox = UITextBox('', rect_group_id, self.manager, object_id=ObjectID(class_id='@Centered'))
+        self.group_id_textbox = UITextBox(
+            '', rect_group_id, self.manager, object_id=ObjectID(class_id='@Centered'))
         self.group_id_textbox.hide()
 
     def get_object_id(self):
-        if self.cell.contents is not None:
-            if self.cell.contents.TYPE == 'manipulator':
-                return '#Manipulator'
-            elif self.cell.contents.TYPE == 'portal':
-                return '#Portal'
+        this_unit = self.cell.contents
+        if this_unit is not None:
+            if this_unit.TYPE == 'manipulator':
+                return f'#manipulator_{this_unit.direction}'
+            elif this_unit.TYPE == 'conveyorbelt':
+                return f'#conveyorbelt_{this_unit.orientation}'
+            elif this_unit.TYPE in UNITS:
+                return f'#{this_unit.TYPE}'
             else:
                 return '#OTHER'
-        else:
-            return '#EMPTY'
+        return '#EMPTY'
 
     def update(self, time_delta):
         self.set_text(str(self.cell))
@@ -50,14 +53,6 @@ class UICell(UIButton):
             self.group_id_textbox.show()
         else:
             self.group_id_textbox.hide()
-        
-        self.object_id = self.get_object_id()
-        if self.object_id != self.object_id_prev:
-            print(self.object_id, self.object_id_prev)
-            self.object_id_prev = self.object_id
-            # self.kwargs['object_id'] = self.object_id
-        #     self.__init__(self.relative_rect, self.cell, self.manager, self.OPTIONS, **self.kwargs)
-
         return super().update(time_delta)
 
 
@@ -80,7 +75,8 @@ class FieldPanel(UIPanel):
         self.field = field
         for i in range(BOARD_SIZE[0]):
             for j in range(BOARD_SIZE[1]):
-                self.cells[i][j].cell = field[i][j]
+                if self.cells[i][j].object_id != self.cells[i][j].get_object_id():
+                    self.cells[i][j] = UICell(self.cells[i][j].relative_rect, field[i][j], self.manager, self.OPTIONS)
 
     def disable_uicells(self):
         for i in range(BOARD_SIZE[0]):
@@ -110,7 +106,6 @@ class CommandInput(UITextEntryLine):
         rect = pygame.Rect((0, 0, 0, 0))
         rect.size = (field_panel_rect.size[0], COMMAND_INPUT_HEIGHT)
         rect.topright = field_panel_rect.bottomright
-        print('size', rect.size)
         super().__init__(rect, manager, *args, **kwargs)
         self.set_forbidden_characters(COMMAND_INPUT_FORBIDDEN_CHARS)
 
@@ -180,7 +175,7 @@ class Gui(Game):
 
     def reset_multiline_cmds_mode(self):
         self.multiple_cmds_mode = SimpleNamespace(
-            is_active=False, commands=[], commands_to_display=[], 
+            is_active=False, commands=[], commands_to_display=[],
             current_cmd_index=0, run=False, last_time=None, DELAY=None)
 
     def reset_game_gui(self):
@@ -241,7 +236,8 @@ class Gui(Game):
                         # run compiled commands
                         print('running')
                         self.multiple_cmds_mode.run = True
-                        self.multiple_cmds_mode.delay = 4.0 / len(self.multiple_cmds_mode.commands)
+                        self.multiple_cmds_mode.delay = 4.0 / \
+                            len(self.multiple_cmds_mode.commands)
                         self.multiple_cmds_mode.last_time = time()
                 else:
                     if event.key == pygame.K_SLASH:
@@ -271,7 +267,8 @@ class Gui(Game):
                         raw_command = self.command_input.get_text()
                         try:
                             if not self.command_handler.pattern_cmds.match(raw_command):
-                                raise NotASingleCommand(f'{raw_command} is not valid single-command; use [group_id][command] syntax')
+                                raise NotASingleCommand(
+                                    f'{raw_command} is not valid single-command; use [group_id][command] syntax')
                             single_command = self.command_handler.commands_on_single_group(
                                 raw_command)[0]
                             self.command_history.append(raw_command)
@@ -305,7 +302,7 @@ class Gui(Game):
                 if len(self.multiple_cmds_mode.commands) > self.multiple_cmds_mode.current_cmd_index:
                     self.multiple_cmds_mode.last_time = now
                     this_command = self.multiple_cmds_mode.commands[
-                                self.multiple_cmds_mode.current_cmd_index]
+                        self.multiple_cmds_mode.current_cmd_index]
                     self.try_execute_on_group(this_command)
                     self.multiple_cmds_mode.current_cmd_index += 1
                 else:
@@ -328,9 +325,10 @@ def main():
     background = pygame.Surface(window_size)
     background.fill(pygame.Color('#000000'))
 
-    manager = pygame_gui.UIManager(window_size, theme_path='theme.json', enable_live_theme_updates=False)
+    manager = pygame_gui.UIManager(
+        window_size, theme_path='theme.json', enable_live_theme_updates=False)
 
-    level_file = 'level_files/level12.txt'
+    level_file = 'level_files/level11.txt'
     game = Gui(manager, level_file)
     clock = pygame.time.Clock()
     is_running = True
