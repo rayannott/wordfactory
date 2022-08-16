@@ -1,4 +1,28 @@
 {
+    "button": {
+        "colours": {
+            "normal_bg": "#25292e",
+            "hovered_bg": "#35393e",
+            "disabled_bg": "#25292e",
+            "selected_bg": "#25292e",
+            "active_bg": "#193784",
+            "normal_text": "#c5cbd8",
+            "hovered_text": "#FFFFFF",
+            "selected_text": "#FFFFFF",
+            "disabled_text": "#6d736f",
+            "active_text": "#6d736f",
+            "normal_border": "#555555",
+            "hovered_border": "#B0B0B0",
+            "disabled_border": "#808080",
+            "selected_border": "#8080B0",
+            "active_border": "#8080B0",
+            "normal_text_shadow": "#10101070",
+            "hovered_text_shadow": "#10101070",
+            "disabled_text_shadow": "#10101070",
+            "selected_text_shadow": "#10101070",
+            "active_text_shadow": "#10101070"
+        }
+    },
     "@Centered": {
         "misc": {
             "text_horiz_alignment": "center"
@@ -32,10 +56,17 @@
             }
         }
     },
-    "#portal": {
+    "#portal_active": {
         "images": {
             "normal_image": {
-                "path": "assets/portal.png"
+                "path": "assets/portal_active.png"
+            }
+        }
+    },
+    "#portal_inactive": {
+        "images": {
+            "normal_image": {
+                "path": "assets/portal_inactive.png"
             }
         }
     },
@@ -74,10 +105,31 @@
             }
         }
     },
-    "#flipper": {
+    "#flipper_0": {
         "images": {
             "normal_image": {
-                "path": "assets/flipper.png"
+                "path": "assets/flipper_0.png"
+            }
+        }
+    },
+    "#flipper_1": {
+        "images": {
+            "normal_image": {
+                "path": "assets/flipper_1.png"
+            }
+        }
+    },
+    "#flipper_2": {
+        "images": {
+            "normal_image": {
+                "path": "assets/flipper_2.png"
+            }
+        }
+    },
+    "#flipper_3": {
+        "images": {
+            "normal_image": {
+                "path": "assets/flipper_3.png"
             }
         }
     },
@@ -85,6 +137,13 @@
         "images": {
             "normal_image": {
                 "path": "assets/rock.png"
+            }
+        }
+    },
+    "#card": {
+        "images": {
+            "normal_image": {
+                "path": "assets/card.png"
             }
         }
     },

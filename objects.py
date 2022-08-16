@@ -123,11 +123,9 @@ class Game:
         #     'OBJECTS': deepcopy(self.objects)
         # }
         self.command_history = []
-        
+
         with open('options.json') as f:
             self.OPTIONS = json.load(f)
-
-    
 
     def is_victory(self):
         return ''.join(self.submitted) in self.WORDS
@@ -158,13 +156,16 @@ class Game:
             'Stack': Stack,
             'Rock': Rock,
             'Flipper': Flipper,
-            'Portal': Portal
+            'Portal': Portal,
+            'Card': Card,
+            'Piston': Piston
         }
         group_id = 0
         unit_id = 0
         with open(instruction_file) as f:
             lines = f.readlines()
-
+        # TODO: make portals set COUPLE_IDs automatically
+        is_there_a_submitter = False
         for line in lines:
             for name, pattern in patterns.items():
                 if pattern.match(line):
@@ -172,11 +173,9 @@ class Game:
                     if name == 'unit':
                         position_str, unit_name, kwargs_str = search_groups
                         pos = tuple(map(int, position_str.split()))
-                        if kwargs_str is None:
-                            kwargs = dict()
-                        else:
+                        kwargs = dict()
+                        if kwargs_str is not None:
                             kwargs_list = kwargs_str.strip().split()
-                            kwargs = dict()
                             for kw in kwargs_list:
                                 if pattern_integer_value.match(kw):
                                     key_, val_ = pattern_integer_value.search(
@@ -186,12 +185,14 @@ class Game:
                                     key_, val_ = pattern_str_value.search(
                                         kw).groups()
                                     kwargs[key_] = val_
+                        # creating units
                         if unit_name == 'InitStack':
                             self.objects.append(
                                 InitStack(id=unit_id, pos=pos, letters=self.LETTERS))
                         elif unit_name == 'Submitter':
                             self.objects.append(
                                 Submitter(id=unit_id, pos=pos, submitted=self.submitted))
+                            is_there_a_submitter = True
                         else:
                             self.objects.append(
                                 unit_classes[unit_name](
@@ -213,7 +214,8 @@ class Game:
                                 for this_group_obj_index in this_group_object_indices:
                                     self.objects[this_group_obj_index].IN_GROUP = group_id
                             else:
-                                raise GroupOfDifferentTypes
+                                raise GroupOfDifferentTypes(
+                                    'There are groups containing units of different types')
                             group_id += 1
                     elif name == 'words':
                         self.WORDS = search_groups[0].split()
@@ -222,7 +224,10 @@ class Game:
                     elif name == 'note':
                         self.NOTE.append(search_groups[0])
                     else:
-                        raise UnmatchedCreationPattern
+                        raise UnmatchedCreationPattern(
+                            'unmatched_creation_pattern??')
+        if not is_there_a_submitter:
+            raise SubmitterNotFound('There must be at least one submitter')
         # coupled objects:
         for obj in self.objects:
             if isinstance(obj, Coupled):
@@ -241,10 +246,6 @@ class Game:
             pos = obj.pos
             self.field[pos[0]][pos[1]].contents = obj
 
-    def terminate(self, message):
-        self.terminated = True
-        print(message)
-
     def execute(self, obj: Unit, command):
         if obj.pos is None:
             raise ControllableIsInsideContainer
@@ -261,7 +262,11 @@ class Game:
                 raise UnknownCommand(
                     f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'piston':
-            pass
+            if command == 'x':
+                obj.c_extend(game=self)
+            else:
+                raise UnknownCommand(
+                    f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'conveyorbelt':
             if command == '+':
                 obj.c_shift_positive(game=self)
@@ -272,7 +277,7 @@ class Game:
                     f'Unknown command for {obj.TYPE}: {command}')
         elif obj.TYPE == 'flipper':
             if command == 'f':
-                obj.flip_unit(game=self)
+                obj.c_flip_unit(game=self)
             else:
                 raise UnknownCommand(
                     f'Unknown command for {obj.TYPE}: {command}')
@@ -306,7 +311,7 @@ class Group:
 
 
 class Card(Unit):
-    def __init__(self, id, pos, letter, TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+    def __init__(self, id, pos, letter='.', TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.letter = letter
@@ -416,20 +421,62 @@ class ConveyorBelt(Container):
             self.orientation = 'h'
 
 
+class Piston(Unit):
+    def __init__(self, id, pos, direction, TYPE='piston', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.direction = direction
+
+    def c_extend(self, game):
+        delta = DIRECTIONS[self.direction]
+        position_to_push = (self.pos[0] + delta[0],
+                            self.pos[1] + delta[1])
+        position_to_push_to = (self.pos[0] + 2*delta[0],
+                               self.pos[1] + 2*delta[1])
+        if inside_borders(position_to_push):
+            if game.field[position_to_push[0]][position_to_push[1]].contents is not None:
+                if game.field[position_to_push[0]][position_to_push[1]].contents.IS_MOVABLE:
+                    if inside_borders(position_to_push_to):
+                        game.field[position_to_push_to[0]][position_to_push_to[1]].put(game.field[position_to_push[0]][position_to_push[1]].contents)
+                        game.field[position_to_push[0]][position_to_push[1]].contents = None
+                    else:
+                        raise PushingOutsideOfField('Pushing outside of the field is not allowed')
+                else:
+                    raise ImmovableUnit(f'Unit {game.field[position_to_push[0]][position_to_push[1]].contents.TYPE} cannot be moved (pushed)')
+        else:
+            raise PushingFieldBorders('Nice try pushing the borders')
+
+    def flip(self):
+        self.direction += 1
+        self.direction %= 4
+    
+    def __str__(self):
+        return f'P{self.direction}'
+
+
 class Portal(Coupled):
-    def __init__(self, id, pos, COUPLE_ID, TYPE='portal', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
+    def __init__(self, id, pos, COUPLE_ID, active=True, TYPE='portal', holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
         super().__init__(id, pos, COUPLE_ID, TYPE, holds, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.active = active
 
     def put_object(self, obj: Unit):
-        self.send(obj)
+        if self.active:
+            self.send(obj)
+        else:
+            super().put_object(obj)
 
     def send(self, obj):
-        if self.COUPLE.is_empty():
-            self.COUPLE.holds = obj
-            self.holds = None
-        else:
+        if self.COUPLE.pos == None:
+            raise CoupledPortalInsideContainer
+        if not self.COUPLE.is_empty():
             raise OccupiedPortal('That portal is occupied')
+        obj.pos = None
+        self.COUPLE.holds = obj
+        self.holds = None
+
+    def flip(self):
+        self.active = not self.active
 
     def __str__(self):
         return f'{self.id}{self.COUPLE_ID}[{self.holds if self.holds is not None else ""}]'
@@ -517,7 +564,7 @@ class Flipper(Unit):
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.direction = direction
 
-    def flip_unit(self, game):
+    def c_flip_unit(self, game):
         delta = DIRECTIONS[self.direction]
         position = (self.pos[0] + delta[0],
                     self.pos[1] + delta[1])
@@ -548,12 +595,4 @@ class Rock(Unit):
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
 
     def __str__(self):
-        return 'Rock'
-
-
-# if __name__ == '__main__':
-#     g = Game('level_files/level2.txt')
-#     print(g.WORDS, g.LETTERS)
-#     for i, el in enumerate(g.objects):
-#         print(el, el.IN_GROUP)
-#     print(g.groups)
+        return ''

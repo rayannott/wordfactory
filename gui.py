@@ -33,12 +33,17 @@ class UICell(UIButton):
         self.group_id_textbox.hide()
 
     def get_object_id(self):
+        # TODO: draw flippers better
         this_unit = self.cell.contents
         if this_unit is not None:
             if this_unit.TYPE == 'manipulator':
                 return f'#manipulator_{this_unit.direction}'
             elif this_unit.TYPE == 'conveyorbelt':
                 return f'#conveyorbelt_{this_unit.orientation}'
+            elif this_unit.TYPE == 'portal':    
+                return f'#portal_{"active" if this_unit.active else "inactive"}'
+            elif this_unit.TYPE == 'flipper':
+                return f'#flipper_{this_unit.direction}'
             elif this_unit.TYPE in UNITS:
                 return f'#{this_unit.TYPE}'
             else:
@@ -76,7 +81,8 @@ class FieldPanel(UIPanel):
         for i in range(BOARD_SIZE[0]):
             for j in range(BOARD_SIZE[1]):
                 if self.cells[i][j].object_id != self.cells[i][j].get_object_id():
-                    self.cells[i][j] = UICell(self.cells[i][j].relative_rect, field[i][j], self.manager, self.OPTIONS)
+                    self.cells[i][j] = UICell(
+                        self.cells[i][j].relative_rect, field[i][j], self.manager, self.OPTIONS)
 
     def disable_uicells(self):
         for i in range(BOARD_SIZE[0]):
@@ -132,13 +138,18 @@ class LogTextBox(UITextBox):
         self.append_html_text(text)
 
 
-class LettersSubmittedPanel(UIPanel):
-    pass
+# class LettersSubmittedPanel(UIPanel):
+#     pass
 
 
-class LettersStackPanel(UIPanel):
-    pass
-
+# class LettersStackPanel(UIPanel):
+#     pass
+class ManualMessage(UIMessageWindow):
+    def __init__(self, manager):
+        rect = pygame.Rect((200, 200), (700, 700))
+        html_message = 'help'
+        super().__init__(rect, html_message, manager, window_title='Manual')
+        
 
 class WinMessage(UIMessageWindow):
     def __init__(self, manager, words, submitted_word, command_history, *args, **kwargs):
@@ -164,14 +175,17 @@ class Gui(Game):
         self.command_input.focus()
         self.command_feedback = CommandFeedback(
             self.ui_manager, self.field_panel.rect, self.command_input.rect)
+        dummy_button_rect = pygame.Rect((0, 0, 0, 0))
+        dummy_button_rect.size = (100, 60)
+        dummy_button_rect.topright = self.logs.rect.bottomright
+        self.dummy_button = UIButton(
+            dummy_button_rect, 'DUMMY', self.ui_manager)
         self.reset_multiline_cmds_mode()
 
         words_str = paint(' '.join(self.WORDS), '#E9D885')
-        self.logs.log(
-            f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>')
-        if self.NOTE:
-            self.logs.log(
-                f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>')
+        self.init_text = f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>' + \
+            (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
+        self.logs.log(self.init_text)
 
     def reset_multiline_cmds_mode(self):
         self.multiple_cmds_mode = SimpleNamespace(
@@ -184,9 +198,6 @@ class Gui(Game):
         # super().reset_game()
         # self.field_panel = FieldPanel(
         #     self.ui_manager, self.field, self.OPTIONS)
-
-    def show_win_message(self):
-        return WinMessage(self.ui_manager, self.WORDS, ''.join(self.submitted), command_history=self.command_history)
 
     def log_warning(self, w):
         self.logs.log(paint(f'{w.__class__.__name__} warning:<br>', '#F0BF0D'))
@@ -261,22 +272,34 @@ class Gui(Game):
                         self.command_input.unfocus()
                     elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
                         # insert previous prompt
-                        self.command_input.set_text(self.command_history[-1])
+                        if self.command_history:
+                            self.command_input.set_text(self.command_history[-1])
                     elif event.key == pygame.K_RETURN:
                         # run one single command
                         raw_command = self.command_input.get_text()
-                        try:
-                            if not self.command_handler.pattern_cmds.match(raw_command):
-                                raise NotASingleCommand(
-                                    f'{raw_command} is not valid single-command; use [group_id][command] syntax')
-                            single_command = self.command_handler.commands_on_single_group(
-                                raw_command)[0]
-                            self.command_history.append(raw_command)
-                            self.try_execute_on_group(single_command)
-                        except Warning as w:
-                            self.log_warning(w)
+                        if raw_command.startswith('help'):
+                            help = help_commands_processing(raw_command)
+                            if help == '@manual':
+                                ManualMessage(self.ui_manager)
+                            else:
+                                self.logs.log(help)
+                            self.command_input.set_text('')
+                        else:
+                            try:
+                                if not raw_command:
+                                    raise EmptyPrompt(
+                                        'There is nothing to execute')
+                                if not self.command_handler.pattern_cmds.match(raw_command):
+                                    raise NotASingleCommand(
+                                        f'{raw_command} is not valid single-command; use [group_id][command] syntax')
+                                single_command = self.command_handler.commands_on_single_group(
+                                    raw_command)[0]
+                                self.command_history.append(raw_command)
+                                self.try_execute_on_group(single_command)
+                            except Warning as w:
+                                self.log_warning(w)
                     elif event.key == pygame.K_i:  # TODO: only when command_input is unfocused
-                        # print info about all objects
+                        # print out info about all objects and command history
                         for obj in self.objects:
                             print(obj.describe())
                         print('commands:', ' '.join(self.command_history))
@@ -285,12 +308,16 @@ class Gui(Game):
                         # print('reset_game')
                         # self.logs.log('reset game<br>')
                         # self.reset_game_gui()
+            elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.dummy_button:
+                    print('hi')
+
             self.victory = self.is_victory()
             self.update()
 
     def update(self):
         if self.victory:
-            self.show_win_message()
+            WinMessage(self.ui_manager, self.WORDS, ''.join(self.submitted), command_history=self.command_history)
             self.command_feedback.set_text('')
             self.command_input.disable()
             self.command_feedback.disable()
@@ -321,6 +348,8 @@ def main():
     pygame.init()
     pygame.display.set_caption('Word Factory')
     window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
+    pygame_icon = pygame.image.load('assets/icon.png')
+    pygame.display.set_icon(pygame_icon)
     window_size = window_surface.get_rect().size
     background = pygame.Surface(window_size)
     background.fill(pygame.Color('#000000'))
@@ -328,17 +357,29 @@ def main():
     manager = pygame_gui.UIManager(
         window_size, theme_path='theme.json', enable_live_theme_updates=False)
 
-    level_file = 'level_files/level11.txt'
-    game = Gui(manager, level_file)
+    level_file = 'level_files/level_.txt'
     clock = pygame.time.Clock()
     is_running = True
+    exception_caught = False
+
+    try:
+        game = Gui(manager, level_file)
+    except LevelCreationError as e:
+        # catching level creation exceptions
+        exception_caught = True
+        print(e)
+        UIMessageWindow(pygame.Rect((200, 200), (700, 700)), paint(
+            f'{e.__class__.__name__} exception:<br>{[e]}', '#FF0000'), manager)
 
     while is_running:
         time_delta = clock.tick(30)/1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
-            game.process_event(event)
+
+            if not exception_caught:
+                game.process_event(event)
+
             manager.process_events(event)
 
         manager.update(time_delta)
