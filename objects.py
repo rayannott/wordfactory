@@ -451,7 +451,7 @@ class Piston(Unit):
         self.direction %= 4
     
     def __str__(self):
-        return f'P{self.direction}'
+        return ''
 
 
 class Portal(Coupled):

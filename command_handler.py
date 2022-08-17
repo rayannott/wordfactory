@@ -53,11 +53,9 @@ class CommandHandler:
             raise UnmatchedParentheses(
                 'Some parentheses are unmatched in the command')
         if not set('[]()').intersection(set(raw_text)):
-            print('no loops groups')
             res = self.simple_command_sequence(raw_text)
             return res, list(map(lambda x: f'{x[0]}{x[1]}', res))
         
-        print('loops')
         result = []
         loops = self.find_loops(raw_text)
         individual_commands = self.find_commands_on_single_groups(raw_text)
