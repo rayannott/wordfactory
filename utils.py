@@ -26,6 +26,7 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
     return f'<font color={color} size={size}>{s}</font>'
 
+
 def load_level_filenames():
     def key(file):
         try:
@@ -35,25 +36,32 @@ def load_level_filenames():
     import os
     level_files = os.listdir('level_files')
 
-    result = [el for el in level_files if el.startswith('level') and el.endswith('.txt')]
+    result = [el for el in level_files if el.startswith(
+        'level') and el.endswith('.txt')]
     result.sort(key=key)
     return result
 
 
-
-
 HELP_TEXT = {
-    'rules': 'bla bla bla',
-    'manipulator': '',
-    'portal': '',
+    'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units',
+    'card':  'A unit with a letter (or a period) on it. They need to be submitted to the Submitter in an order so that one of the words is created.',
+    'initstack': 'An immovable unit in which usually the letter Cards are stored. You can take from it but cannot put back.',
+    'submitter': 'Put Cards here',
+
+    'manipulator': 'Main force of your factory. It can move units by taking them from adjacent cells. Rotate its hand to choose where to place whatever the manipulator is holding.<br>' +
+    paint('commands:<br>', '#ADE21E') + f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in direction it is facing<br>' + f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in direction it is facing<br>' +
+    f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
+    f'{paint("r", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees<br>',
+
     'conveyorbelt': '',
-    'rock': '',
-    'initstack': '',
-    'stack': '',
+
     'flipper': '',
-    'submitter': '',
-    'card':  '',
-    'piston': ''
+
+    'piston': '',
+
+    'rock': '',
+    'portal': '',
+    'stack': '',
 }
 
 
