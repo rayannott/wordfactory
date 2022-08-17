@@ -183,14 +183,14 @@ class Gui(Game):
         self.command_input.focus()
         self.command_feedback = CommandFeedback(
             self.ui_manager, self.field_panel.rect, self.command_input.rect)
-        
+
         dummy_button_rect = pygame.Rect((0, 0, 0, 0))
         dummy_button_rect.size = (100, 60)
         dummy_button_rect.topright = self.logs.rect.bottomright
         self.dummy_button = UIButton(
             dummy_button_rect, 'DUMMY', self.ui_manager)
         self.dummy_button.hide()
-        
+
         self.reset_multiline_cmds_mode()
 
         level_number = get_level_number_from_filename(level_file)
@@ -316,7 +316,6 @@ class Gui(Game):
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: try typing \\help<br>')
                             self.command_input.set_text('')
-
                         else:
                             try:
                                 if not raw_command:
@@ -329,6 +328,7 @@ class Gui(Game):
                                     raw_command)[0]
                                 self.command_history.append(raw_command)
                                 self.try_execute_on_group(single_command)
+                                self.command_input.set_text('')
                             except Warning as w:
                                 self.log_warning(w)
                     elif event.key == pygame.K_DELETE:
@@ -406,7 +406,7 @@ class LevelButtonsPanel(UIPanel):
                 if event.ui_element == btn:
                     self.opened_level = self.level_filenames[i]
                     solution = GameWindow(
-                        level_file= LEVELS_DIR + '/' + self.opened_level)
+                        level_file=LEVELS_DIR + '/' + self.opened_level)
                     if solution:
                         print('sol:', solution)
                     pygame.display.set_caption('Pick a level...')
@@ -424,6 +424,9 @@ class LevelPicker():
         self.rect.size = (600, 50)
         self.level_buttons_panel = LevelButtonsPanel(
             self.manager, self.level_filenames)
+        self.grid_size = (8, 6)
+        self.chosen_button_index = 0
+        self.chosen_button_index_prev = 0
 
     def process_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -435,6 +438,46 @@ class LevelPicker():
                 if solution:
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
+            elif event.key == pygame.K_RETURN:
+                print('selected:', self.level_buttons_panel.buttons[self.chosen_button_index].text)
+                this_level = self.level_buttons_panel.level_filenames[self.chosen_button_index]
+                solution = GameWindow(
+                    level_file=LEVELS_DIR + '/' + this_level)
+                if solution:
+                    print('sol:', solution)
+                pygame.display.set_caption('Pick a level...')
+            elif event.key == pygame.K_UP and self.chosen_button_index - self.grid_size[0] >= 0:
+                self.chosen_button_index_prev = self.chosen_button_index
+                self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
+                )
+                self.chosen_button_index -= self.grid_size[0]
+                # self.chosen_button_index %= self.grid_size[1]
+                self.level_buttons_panel.buttons[self.chosen_button_index].select(
+                )
+            elif event.key == pygame.K_RIGHT and self.chosen_button_index < len(self.level_buttons_panel.buttons) - 1:
+                self.chosen_button_index_prev = self.chosen_button_index
+                self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
+                )
+                self.chosen_button_index += 1
+                # self.chosen_button_index %= self.grid_size[0]
+                self.level_buttons_panel.buttons[self.chosen_button_index].select(
+                )
+            elif event.key == pygame.K_DOWN and self.chosen_button_index + self.grid_size[0] < len(self.level_buttons_panel.buttons):
+                self.chosen_button_index_prev = self.chosen_button_index
+                self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
+                )
+                self.chosen_button_index += self.grid_size[0]
+                # self.chosen_button_index %= self.grid_size[1]
+                self.level_buttons_panel.buttons[self.chosen_button_index].select(
+                )
+            elif event.key == pygame.K_LEFT and self.chosen_button_index > 0:
+                self.chosen_button_index_prev = self.chosen_button_index
+                self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
+                )
+                self.chosen_button_index -= 1
+                # self.chosen_button_index %= self.grid_size[0]
+                self.level_buttons_panel.buttons[self.chosen_button_index].select(
+                )
 
 
 def GameWindow(level_file):
@@ -458,7 +501,7 @@ def GameWindow(level_file):
         exception_caught = True
         print(e)
         UIMessageWindow(pygame.Rect((200, 200), (700, 700)), paint(
-            f'{e.__class__.__name__} exception:<br>{[e]}', '#FF0000'), manager)
+            f'{e.__class__.__name__} exception:<br>[{e}]', '#FF0F0F'), manager)
 
     while is_running:
         time_delta = clock.tick(30)/1000.0
@@ -476,7 +519,7 @@ def GameWindow(level_file):
         manager.draw_ui(window_surface)
         pygame.display.update()
 
-    if game.victory:
+    if not exception_caught and game.victory:
         return ' '.join(game.command_history)
     else:
         return ''
