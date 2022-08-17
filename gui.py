@@ -1,7 +1,6 @@
-# from copy import deepcopy
-import re
 from time import time
 from types import SimpleNamespace
+from typing import List
 import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIWindow
@@ -15,11 +14,10 @@ from utils import *
 
 
 class UICell(UIButton):
-    def __init__(self, relative_rect, cell: Cell, manager, OPTIONS, **kwargs):
+    def __init__(self, relative_rect, cell: Cell, manager, **kwargs):
         self.cell = cell
         self.text = str(cell)
         self.manager = manager
-        self.OPTIONS = OPTIONS
         self.relative_rect = relative_rect
         self.kwargs = kwargs
         self.object_id = self.get_object_id()
@@ -69,15 +67,12 @@ class UICell(UIButton):
 
 
 class FieldPanel(UIPanel):
-    def __init__(self, manager, field, OPTIONS, **kwargs):
-        self.OPTIONS = OPTIONS
+    def __init__(self, manager, field, **kwargs):
         self.manager = manager
         self.field = field
         self.field_panel_rect = pygame.Rect(0, 0, 0, 0)
-        # self.field_panel_rect.size = (160, 120)
         self.field_panel_rect.size = (
             ((BOARD_SIZE[1] + 3)*MARGIN + BOARD_SIZE[1]*CELL_SIZE[1]),  (BOARD_SIZE[0] + 3)*MARGIN + BOARD_SIZE[0]*CELL_SIZE[0])
-        # self.field_panel_rect.topleft = (200, 0)
         self.field_panel_rect.topright = (WINDOW_SIZE[0]-MARGIN, MARGIN)
         super().__init__(self.field_panel_rect,
                          starting_layer_height=0, manager=manager, **kwargs)
@@ -89,7 +84,7 @@ class FieldPanel(UIPanel):
             for j in range(BOARD_SIZE[1]):
                 if self.cells[i][j].object_id != self.cells[i][j].get_object_id():
                     self.cells[i][j] = UICell(
-                        self.cells[i][j].relative_rect, field[i][j], self.manager, self.OPTIONS)
+                        self.cells[i][j].relative_rect, field[i][j], self.manager)
 
     def disable_uicells(self):
         for i in range(BOARD_SIZE[0]):
@@ -101,8 +96,7 @@ class FieldPanel(UIPanel):
             self.field_panel_rect.topleft[0] + 2*MARGIN, self.field_panel_rect.topleft[1] + 2*MARGIN)
         self.cells = [[UICell(relative_rect=pygame.Rect((start_x + j*(MARGIN + CELL_SIZE[0]), start_y + i*(MARGIN + CELL_SIZE[1])), CELL_SIZE),
                               cell=self.field[i][j],
-                              manager=self.manager,
-                              OPTIONS=self.OPTIONS) for j in range(BOARD_SIZE[1])] for i in range(BOARD_SIZE[0])]
+                              manager=self.manager) for j in range(BOARD_SIZE[1])] for i in range(BOARD_SIZE[0])]
 
     def process_event(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
@@ -182,26 +176,27 @@ class Gui(Game):
         super().__init__(level_file)
         self.ui_manager = ui_manager
         self.field_panel = FieldPanel(
-            self.ui_manager, self.field, self.OPTIONS)
+            self.ui_manager, self.field)
         self.logs = LogTextBox(self.ui_manager, self.field_panel.rect)
         self.command_input = CommandInput(
             self.ui_manager, self.field_panel.rect)
         self.command_input.focus()
         self.command_feedback = CommandFeedback(
             self.ui_manager, self.field_panel.rect, self.command_input.rect)
+        
         dummy_button_rect = pygame.Rect((0, 0, 0, 0))
         dummy_button_rect.size = (100, 60)
         dummy_button_rect.topright = self.logs.rect.bottomright
         self.dummy_button = UIButton(
             dummy_button_rect, 'DUMMY', self.ui_manager)
         self.dummy_button.hide()
+        
         self.reset_multiline_cmds_mode()
 
-        level_number,  = re.compile(
-            r'.+level(.+).txt').search(level_file).groups()
-        words_str = paint(' '.join(self.WORDS), '#E9D885')
+        level_number = get_level_number_from_filename(level_file)
+        words_str = paint(' '.join(self.WORDS), '#E9D885', size=5)
         self.init_text = f'Level {paint(level_number, "#17D36A")} has been opened<br><br>' + \
-            f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>' + \
+            f'{paint("goal")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
 
@@ -216,13 +211,6 @@ class Gui(Game):
         self.command_input.kill()
         self.command_feedback.kill()
         self.dummy_button.kill()
-
-    def reset_game_gui(self):
-        pass
-        # really prone to bugs
-        # super().reset_game()
-        # self.field_panel = FieldPanel(
-        #     self.ui_manager, self.field, self.OPTIONS)
 
     def log_warning(self, w):
         self.logs.log(paint(f'{w.__class__.__name__} warning:<br>', '#F0BF0D'))
@@ -314,15 +302,19 @@ class Gui(Game):
                         elif raw_command.startswith('\\'):
                             # run console commands
                             if raw_command == '\\help':
-                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}:<br>')
+                                self.logs.log(
+                                    f'{paint("CONSOLE", "#FA1041")}:<br>')
                             elif raw_command == '\\info':
                                 # print out info about all objects and command history
                                 for obj in self.objects:
                                     print(obj.describe())
-                                print('commands:', ' '.join(self.command_history))
-                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}: game information has been printed to console')
+                                print('commands:', ' '.join(
+                                    self.command_history))
+                                self.logs.log(
+                                    f'{paint("CONSOLE", "#FA1041")}: game information has been printed to the console<br>')
                             else:
-                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}: try typing \\help<br>')
+                                self.logs.log(
+                                    f'{paint("CONSOLE", "#FA1041")}: try typing \\help<br>')
                             self.command_input.set_text('')
 
                         else:
@@ -381,52 +373,68 @@ class Gui(Game):
                 self.command_feedback.set_text(' '.join(to_display))
 
 
+class LevelButtonsPanel(UIPanel):
+    def __init__(self, manager, level_filenames, **kwargs):
+        self.level_filenames = level_filenames
+        # self.progress = progress
+        self.panel_rect = pygame.Rect((0, 0, 0, 0))
+        self.panel_rect.topleft = (100, 100)
+        self.panel_rect.size = (WINDOW_SIZE[0] - 200, WINDOW_SIZE[1] - 200)
+        self.grid_size = (8, 6)
+        self.button_size = (121, 80)
+        self.manager = manager
+        super().__init__(self.panel_rect, starting_layer_height=0,
+                         manager=self.manager, **kwargs)
+        self.create_buttons()
+
+    def create_buttons(self):
+        amount = len(self.level_filenames)
+        start_x, start_y = (
+            self.panel_rect.topleft[0] + 2*MARGIN, self.panel_rect.topleft[1] + 2*MARGIN)
+        self.buttons: List[UIButton] = []
+        for k in range(amount):
+            j = k % self.grid_size[0]
+            i = k // self.grid_size[0]
+            text = f'Level {get_level_number_from_filename(self.level_filenames[k])}'
+            # text_new = text_tmp.capitalize() if self.progress[self.level_filenames[k]]['solved'] else text_tmp
+            self.buttons.append(UIButton(relative_rect=pygame.Rect((start_x + j*(MARGIN + self.button_size[0]), start_y + i*(MARGIN + self.button_size[1])),
+                                self.button_size), text=text, manager=self.manager, tool_tip_text=self.level_filenames[k]))
+
+    def process_event(self, event):
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            for i, btn in enumerate(self.buttons):
+                if event.ui_element == btn:
+                    self.opened_level = self.level_filenames[i]
+                    solution = GameWindow(
+                        level_file= LEVELS_DIR + '/' + self.opened_level)
+                    if solution:
+                        print('sol:', solution)
+                    pygame.display.set_caption('Pick a level...')
+        return super().process_event(event)
+
+
 class LevelPicker():
     def __init__(self, manager, background, window_surface):
         self.level_filenames = load_level_filenames()
         self.manager = manager
         self.background = background
         self.window_surface = window_surface
-        self.input_line_rect = pygame.Rect((0, 0, 0, 0))
-        self.input_line_rect.topleft = (300, 100)
-        self.input_line_rect.size = (600, 50)
-        self.drop_down_level_picker = UIDropDownMenu(
-            self.level_filenames, self.level_filenames[0], self.input_line_rect, self.manager)
-
-        # import os
-        # if os.path.exists('level_files/progress.json'):
-        #     # keeps track of previously solved levels
-        #     with open('progress.json', 'r') as f:
-        #         self.progress = json.load(f)
-        # else:
-        #     self.progress = {
-        #         filename: {'solved': False, 'solution': ''} for filename in self.level_filenames
-        #     }
+        self.rect = pygame.Rect((0, 0, 0, 0))
+        self.rect.topleft = (300, 100)
+        self.rect.size = (600, 50)
+        self.level_buttons_panel = LevelButtonsPanel(
+            self.manager, self.level_filenames)
 
     def process_event(self, event):
-        if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
-            if event.ui_element == self.drop_down_level_picker:
-                self.opened_level = event.text
-                solution = GameWindow(level_file='level_files/' + self.opened_level)
-                if solution:
-                    print('sol:', solution)
-                pygame.display.set_caption('Pick a level...')
-                # if solution:
-                #     self.save_progress(solution)
-        elif event.type == pygame.KEYDOWN:
+        if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_r:
                 from random import choice
-                solution = GameWindow(level_file='level_files/' + choice(self.level_filenames))
+                this_level = choice(self.level_filenames)
+                solution = GameWindow(
+                    level_file=LEVELS_DIR + '/' + this_level)
                 if solution:
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
-
-    
-    # def save_progress(self, solution):
-    #     self.progress[self.opened_level]['solution'] = solution
-    #     self.progress[self.opened_level]['solved'] = True
-    #     with open('progress.json', 'w') as f:
-    #             json.dump(self.progress, f)
 
 
 def GameWindow(level_file):
