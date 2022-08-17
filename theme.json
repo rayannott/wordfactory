@@ -133,6 +133,34 @@
             }
         }
     },
+    "#piston_0": {
+        "images": {
+            "normal_image": {
+                "path": "assets/piston_0.png"
+            }
+        }
+    },
+    "#piston_1": {
+        "images": {
+            "normal_image": {
+                "path": "assets/piston_1.png"
+            }
+        }
+    },
+    "#piston_2": {
+        "images": {
+            "normal_image": {
+                "path": "assets/piston_2.png"
+            }
+        }
+    },
+    "#piston_3": {
+        "images": {
+            "normal_image": {
+                "path": "assets/piston_3.png"
+            }
+        }
+    },
     "#rock": {
         "images": {
             "normal_image": {
