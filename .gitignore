@@ -4,3 +4,7 @@ desktop.ini
 level_files/
 __pycache__/
 progress.json
+gui.spec
+icon.ico
+build/
+
