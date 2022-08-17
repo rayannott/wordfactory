@@ -134,6 +134,9 @@ class GroupOfDifferentTypes(LevelCreationError):
 
 class SubmitterNotFound(LevelCreationError):
     pass
+
+class WordsNotSpecified(LevelCreationError):
+    pass
 # ...
 
 
