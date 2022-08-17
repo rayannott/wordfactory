@@ -1,6 +1,4 @@
 # from copy import deepcopy
-from copy import deepcopy
-import json
 import re
 from time import time
 from types import SimpleNamespace
@@ -257,6 +255,7 @@ class Gui(Game):
                 if shift_mode:
                     if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
                         # compile commands and activate multiple_cmds_mode
+                        print('start steps')
                         raw_commands = self.command_input.get_text()
                         self.command_input.set_text('')
                         try:
@@ -287,7 +286,7 @@ class Gui(Game):
                         self.try_execute_on_group(this_command)
                         self.multiple_cmds_mode.current_cmd_index += 1
                         if len(self.multiple_cmds_mode.commands) <= self.multiple_cmds_mode.current_cmd_index:
-                            print('finish')
+                            print('end steps')
                             self.command_input.focus()
                             self.command_feedback.set_text('')
                             self.reset_multiline_cmds_mode()
@@ -312,6 +311,20 @@ class Gui(Game):
                             else:
                                 self.logs.log(help)
                             self.command_input.set_text('')
+                        elif raw_command.startswith('\\'):
+                            # run console commands
+                            if raw_command == '\\help':
+                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}:<br>')
+                            elif raw_command == '\\info':
+                                # print out info about all objects and command history
+                                for obj in self.objects:
+                                    print(obj.describe())
+                                print('commands:', ' '.join(self.command_history))
+                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}: game information has been printed to console')
+                            else:
+                                self.logs.log(f'{paint("CONSOLE", "#FA1041")}: try typing \\help<br>')
+                            self.command_input.set_text('')
+
                         else:
                             try:
                                 if not raw_command:
@@ -326,11 +339,6 @@ class Gui(Game):
                                 self.try_execute_on_group(single_command)
                             except Warning as w:
                                 self.log_warning(w)
-                    elif event.key == pygame.K_i:  # TODO: only when command_input is unfocused
-                        # print out info about all objects and command history
-                        for obj in self.objects:
-                            print(obj.describe())
-                        print('commands:', ' '.join(self.command_history))
                     elif event.key == pygame.K_DELETE:
                         pass
                         # print('reset_game')
@@ -400,9 +408,19 @@ class LevelPicker():
             if event.ui_element == self.drop_down_level_picker:
                 self.opened_level = event.text
                 solution = GameWindow(level_file='level_files/' + self.opened_level)
+                if solution:
+                    print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
                 # if solution:
                 #     self.save_progress(solution)
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r:
+                from random import choice
+                solution = GameWindow(level_file='level_files/' + choice(self.level_filenames))
+                if solution:
+                    print('sol:', solution)
+                pygame.display.set_caption('Pick a level...')
+
     
     # def save_progress(self, solution):
     #     self.progress[self.opened_level]['solution'] = solution
@@ -419,6 +437,8 @@ def GameWindow(level_file):
     background.fill(pygame.Color('#000000'))
     manager = pygame_gui.UIManager(
         window_size, theme_path='theme.json', enable_live_theme_updates=False)
+    pygame_icon = pygame.image.load('assets/icon.png')
+    pygame.display.set_icon(pygame_icon)
     clock = pygame.time.Clock()
     exception_caught = False
     is_running = True
@@ -448,10 +468,10 @@ def GameWindow(level_file):
         manager.draw_ui(window_surface)
         pygame.display.update()
 
-    # if game.victory:
-    #     return ' '.join(game.command_history)
-    # else:
-    #     return ''
+    if game.victory:
+        return ' '.join(game.command_history)
+    else:
+        return ''
     # game.kill()
 
 
