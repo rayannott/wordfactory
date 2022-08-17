@@ -118,22 +118,10 @@ class Game:
         self.fill_field()
         self.active = True
         self.command_handler = CommandHandler()
-        # self.INITIAL_CONFIGS = {
-        #     'FIELD': deepcopy(self.field),
-        #     'OBJECTS': deepcopy(self.objects)
-        # }
         self.command_history = []
-
-        with open('options.json') as f:
-            self.OPTIONS = json.load(f)
 
     def is_victory(self):
         return ''.join(self.submitted) in self.WORDS
-
-    def reset_game(self):
-        self.field = deepcopy(self.INITIAL_CONFIGS['FIELD'])
-        self.objects = deepcopy(self.INITIAL_CONFIGS['OBJECTS'])
-        self.command_history = []
 
     def create_empty_field(self):
         # TODO: edit board_size 8x12 -> 6x10
@@ -451,7 +439,7 @@ class Piston(Unit):
         self.direction %= 4
     
     def __str__(self):
-        return ''
+        return 'P'
 
 
 class Portal(Coupled):
@@ -586,7 +574,7 @@ class Flipper(Unit):
         self.direction %= 4
 
     def __str__(self):
-        return f'F{self.direction}'
+        return 'F'
 
 
 class Rock(Unit):
