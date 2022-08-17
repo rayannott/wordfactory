@@ -1,5 +1,7 @@
 # from copy import deepcopy
 from copy import deepcopy
+import json
+import re
 from time import time
 from types import SimpleNamespace
 import pygame
@@ -45,6 +47,8 @@ class UICell(UIButton):
                 return f'#portal_{"active" if this_unit.active else "inactive"}'
             elif this_unit.TYPE == 'flipper':
                 return f'#flipper_{this_unit.direction}'
+            elif this_unit.TYPE == 'piston':
+                return f'#piston_{this_unit.direction}'
             elif this_unit.TYPE in UNITS:
                 return f'#{this_unit.TYPE}'
             else:
@@ -195,8 +199,11 @@ class Gui(Game):
         self.dummy_button.hide()
         self.reset_multiline_cmds_mode()
 
+        level_number,  = re.compile(
+            r'.+level(.+).txt').search(level_file).groups()
         words_str = paint(' '.join(self.WORDS), '#E9D885')
-        self.init_text = f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>' + \
+        self.init_text = f'Level {paint(level_number, "#17D36A")} has been opened<br><br>' + \
+            f'{paint("words")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
 
@@ -372,24 +379,39 @@ class LevelPicker():
         self.manager = manager
         self.background = background
         self.window_surface = window_surface
-        self.input_line_rect = pygame.Rect((0,0,0,0))
+        self.input_line_rect = pygame.Rect((0, 0, 0, 0))
         self.input_line_rect.topleft = (300, 100)
         self.input_line_rect.size = (600, 50)
-        # self.pick_button_rect = pygame.Rect((0, 0, 0, 0))
-        # self.pick_button_rect.topleft = self.input_line_rect.topright
-        # self.pick_button_rect.size = (100, 50)
-        # self.pick_button = UIButton(
-        #     self.pick_button_rect, 'pick', self.manager)
-        self.drop_down_level_picker = UIDropDownMenu(self.level_filenames, self.level_filenames[0], self.input_line_rect, self.manager)
+        self.drop_down_level_picker = UIDropDownMenu(
+            self.level_filenames, self.level_filenames[0], self.input_line_rect, self.manager)
+
+        # import os
+        # if os.path.exists('level_files/progress.json'):
+        #     # keeps track of previously solved levels
+        #     with open('progress.json', 'r') as f:
+        #         self.progress = json.load(f)
+        # else:
+        #     self.progress = {
+        #         filename: {'solved': False, 'solution': ''} for filename in self.level_filenames
+        #     }
 
     def process_event(self, event):
         if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
             if event.ui_element == self.drop_down_level_picker:
-                GameWindow(level_file='level_files/' + event.text)
+                self.opened_level = event.text
+                solution = GameWindow(level_file='level_files/' + self.opened_level)
                 pygame.display.set_caption('Pick a level...')
+                # if solution:
+                #     self.save_progress(solution)
+    
+    # def save_progress(self, solution):
+    #     self.progress[self.opened_level]['solution'] = solution
+    #     self.progress[self.opened_level]['solved'] = True
+    #     with open('progress.json', 'w') as f:
+    #             json.dump(self.progress, f)
 
 
-def GameWindow(level_file=None):
+def GameWindow(level_file):
     pygame.display.set_caption('Word Factory')
     window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
     window_size = window_surface.get_rect().size
@@ -426,6 +448,10 @@ def GameWindow(level_file=None):
         manager.draw_ui(window_surface)
         pygame.display.update()
 
+    # if game.victory:
+    #     return ' '.join(game.command_history)
+    # else:
+    #     return ''
     # game.kill()
 
 
