@@ -131,9 +131,9 @@ class Game:
     def load_objects_from_txt(self, instruction_file):
         patterns = {
             'unit': re.compile(r'^(\d \d) (\w+)( .+)?'),
-            'groups': re.compile(r'^groups: ?\{([\[\] ,\d]+)\}'),
-            'words': re.compile(r'^words: ?\{([A-Z .]+)\}'),
-            'letters': re.compile(r'^letters: ?\{([A-Z.]+)\}'),
+            'groups': re.compile(r'^groups?: ?\{([\[\] ,\d]+)\}'),
+            'words': re.compile(r'^words?: ?\{([A-Z .]+)\}'),
+            'letters': re.compile(r'^letters?: ?\{([A-Z.]+)\}'),
             'note': re.compile(r'^# ?(.*)')
         }
         pattern_integer_value = re.compile(r'(\w+)=(\w+)')
@@ -154,6 +154,7 @@ class Game:
             lines = f.readlines()
         # TODO: make portals set COUPLE_IDs automatically
         is_there_a_submitter = False
+        are_words_specified = False
         for line in lines:
             for name, pattern in patterns.items():
                 if pattern.match(line):
@@ -207,6 +208,7 @@ class Game:
                             group_id += 1
                     elif name == 'words':
                         self.WORDS = search_groups[0].split()
+                        are_words_specified = True
                     elif name == 'letters':
                         self.LETTERS = search_groups[0]
                     elif name == 'note':
@@ -216,11 +218,13 @@ class Game:
                             'unmatched_creation_pattern??')
         if not is_there_a_submitter:
             raise SubmitterNotFound('There must be at least one submitter')
+        if not are_words_specified:
+            raise WordsNotSpecified('To create a level give a list of words')
         # coupled objects:
         for obj in self.objects:
             if isinstance(obj, Coupled):
                 obj.COUPLE = self.objects[obj.COUPLE_ID]
-        # other groups
+        # individual groups
         for id, unit in enumerate(self.objects):
             if unit.TYPE in CONTROLLABLE_UNITS and unit.IN_GROUP is None:
                 self.groups.append(
@@ -377,12 +381,12 @@ class ConveyorBelt(Container):
         position = (self.pos[0] + delta[0],
                     self.pos[1] + delta[1])
 
-        if inside_borders(position):
-            if not self.is_empty():
+        if not self.is_empty():
+            if inside_borders(position):
                 game.field[position[0]][position[1]].put(self.holds)
                 self.holds = None
-        else:
-            raise PutOutsideOfField(
+            else:
+                raise PutOutsideOfField(
                 'Trying to put outside of the field borders')
 
     def c_shift_negative(self, game: Game):
@@ -394,13 +398,13 @@ class ConveyorBelt(Container):
         position = (self.pos[0] + delta[0],
                     self.pos[1] + delta[1])
 
-        if inside_borders(position):
-            if not self.is_empty():
+        if not self.is_empty():
+            if inside_borders(position):
                 game.field[position[0]][position[1]].put(self.holds)
                 self.holds = None
-        else:
-            raise PutOutsideOfField(
-                'Trying to put outside of the field borders')
+            else:
+                raise PutOutsideOfField(
+                    'Trying to put outside of the field borders')
 
     def flip(self):
         if self.orientation == 'h':
@@ -543,7 +547,7 @@ class Submitter(Container):
 
     def __str__(self):
         s = ''.join(self.submitted)
-        return f'|{s}|'
+        return f'{s}'
 
 
 class Flipper(Unit):
