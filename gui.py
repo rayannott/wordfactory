@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIWindow
+from pygame_gui.elements.ui_drop_down_menu import UIDropDownMenu
 from pygame_gui.windows import UIMessageWindow
 from pygame_gui.core import ObjectID
 
@@ -40,7 +41,7 @@ class UICell(UIButton):
                 return f'#manipulator_{this_unit.direction}'
             elif this_unit.TYPE == 'conveyorbelt':
                 return f'#conveyorbelt_{this_unit.orientation}'
-            elif this_unit.TYPE == 'portal':    
+            elif this_unit.TYPE == 'portal':
                 return f'#portal_{"active" if this_unit.active else "inactive"}'
             elif this_unit.TYPE == 'flipper':
                 return f'#flipper_{this_unit.direction}'
@@ -49,6 +50,10 @@ class UICell(UIButton):
             else:
                 return '#OTHER'
         return '#EMPTY'
+
+    def kill(self):
+        self.group_id_textbox.kill()
+        return super().kill()
 
     def update(self, time_delta):
         self.set_text(str(self.cell))
@@ -106,6 +111,13 @@ class FieldPanel(UIPanel):
                         ) if self.field[i][j].contents is not None else f'pos={self.field[i][j].pos} empty cell')
         return super().process_event(event)
 
+    def kill(self):
+        for i in range(BOARD_SIZE[0]):
+            for j in range(BOARD_SIZE[1]):
+                self.cells[i][j].kill()
+
+        return super().kill()
+
 
 class CommandInput(UITextEntryLine):
     def __init__(self, manager, field_panel_rect, *args, **kwargs):
@@ -149,7 +161,7 @@ class ManualMessage(UIMessageWindow):
         rect = pygame.Rect((200, 200), (700, 700))
         html_message = 'help'
         super().__init__(rect, html_message, manager, window_title='Manual')
-        
+
 
 class WinMessage(UIMessageWindow):
     def __init__(self, manager, words, submitted_word, command_history, *args, **kwargs):
@@ -180,6 +192,7 @@ class Gui(Game):
         dummy_button_rect.topright = self.logs.rect.bottomright
         self.dummy_button = UIButton(
             dummy_button_rect, 'DUMMY', self.ui_manager)
+        self.dummy_button.hide()
         self.reset_multiline_cmds_mode()
 
         words_str = paint(' '.join(self.WORDS), '#E9D885')
@@ -191,6 +204,13 @@ class Gui(Game):
         self.multiple_cmds_mode = SimpleNamespace(
             is_active=False, commands=[], commands_to_display=[],
             current_cmd_index=0, run=False, last_time=None, DELAY=None)
+
+    def kill(self):
+        self.field_panel.kill()
+        self.logs.kill()
+        self.command_input.kill()
+        self.command_feedback.kill()
+        self.dummy_button.kill()
 
     def reset_game_gui(self):
         pass
@@ -273,7 +293,8 @@ class Gui(Game):
                     elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
                         # insert previous prompt
                         if self.command_history:
-                            self.command_input.set_text(self.command_history[-1])
+                            self.command_input.set_text(
+                                self.command_history[-1])
                     elif event.key == pygame.K_RETURN:
                         # run one single command
                         raw_command = self.command_input.get_text()
@@ -317,7 +338,8 @@ class Gui(Game):
 
     def update(self):
         if self.victory:
-            WinMessage(self.ui_manager, self.WORDS, ''.join(self.submitted), command_history=self.command_history)
+            WinMessage(self.ui_manager, self.WORDS, ''.join(
+                self.submitted), command_history=self.command_history)
             self.command_feedback.set_text('')
             self.command_input.disable()
             self.command_feedback.disable()
@@ -344,23 +366,40 @@ class Gui(Game):
                 self.command_feedback.set_text(' '.join(to_display))
 
 
-def main():
-    pygame.init()
+class LevelPicker():
+    def __init__(self, manager, background, window_surface):
+        self.level_filenames = load_level_filenames()
+        self.manager = manager
+        self.background = background
+        self.window_surface = window_surface
+        self.input_line_rect = pygame.Rect((0,0,0,0))
+        self.input_line_rect.topleft = (300, 100)
+        self.input_line_rect.size = (600, 50)
+        # self.pick_button_rect = pygame.Rect((0, 0, 0, 0))
+        # self.pick_button_rect.topleft = self.input_line_rect.topright
+        # self.pick_button_rect.size = (100, 50)
+        # self.pick_button = UIButton(
+        #     self.pick_button_rect, 'pick', self.manager)
+        self.drop_down_level_picker = UIDropDownMenu(self.level_filenames, self.level_filenames[0], self.input_line_rect, self.manager)
+
+    def process_event(self, event):
+        if event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
+            if event.ui_element == self.drop_down_level_picker:
+                GameWindow(level_file='level_files/' + event.text)
+                pygame.display.set_caption('Pick a level...')
+
+
+def GameWindow(level_file=None):
     pygame.display.set_caption('Word Factory')
     window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
-    pygame_icon = pygame.image.load('assets/icon.png')
-    pygame.display.set_icon(pygame_icon)
     window_size = window_surface.get_rect().size
     background = pygame.Surface(window_size)
     background.fill(pygame.Color('#000000'))
-
     manager = pygame_gui.UIManager(
         window_size, theme_path='theme.json', enable_live_theme_updates=False)
-
-    level_file = 'level_files/level_.txt'
     clock = pygame.time.Clock()
-    is_running = True
     exception_caught = False
+    is_running = True
 
     try:
         game = Gui(manager, level_file)
@@ -386,6 +425,73 @@ def main():
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
+
+    # game.kill()
+
+
+def LevelPickerWindow():
+    pygame.init()
+    pygame.display.set_caption('Pick a level...')
+    clock = pygame.time.Clock()
+    window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
+    window_size = window_surface.get_rect().size
+    background = pygame.Surface(window_size)
+    background.fill(pygame.Color('#000000'))
+    manager = pygame_gui.UIManager(
+        window_size, theme_path='theme.json', enable_live_theme_updates=False)
+    lvl_picker = LevelPicker(manager, background, window_surface)
+    pygame_icon = pygame.image.load('assets/icon.png')
+    pygame.display.set_icon(pygame_icon)
+
+    is_running = True
+    while is_running:
+        time_delta = clock.tick(30)/1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+            manager.process_events(event)
+            lvl_picker.process_event(event)
+        manager.update(time_delta)
+        window_surface.blit(background, (0, 0))
+        manager.draw_ui(window_surface)
+        pygame.display.update()
+
+
+def MenuWindow():
+    pygame.init()
+    pygame.display.set_caption('Word Factory')
+    window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
+    pygame_icon = pygame.image.load('assets/icon.png')
+    pygame.display.set_icon(pygame_icon)
+    window_size = window_surface.get_rect().size
+    background = pygame.Surface(window_size)
+    background.fill(pygame.Color('#000000'))
+
+    manager = pygame_gui.UIManager(
+        window_size, theme_path='theme.json', enable_live_theme_updates=False)
+
+    clock = pygame.time.Clock()
+
+    is_running = True
+    while is_running:
+        time_delta = clock.tick(30)/1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_a:
+                    print('picker')
+                    LevelPickerWindow()
+            manager.process_events(event)
+
+        manager.update(time_delta)
+        window_surface.blit(background, (0, 0))
+        manager.draw_ui(window_surface)
+        pygame.display.update()
+
+
+def main():
+    LevelPickerWindow()
 
 
 if __name__ == '__main__':
