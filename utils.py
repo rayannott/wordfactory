@@ -1,3 +1,6 @@
+import json
+
+
 DIRECTIONS = {
     0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)
     # up right down left
@@ -9,7 +12,7 @@ BOARD_SIZE = (6, 8)
 GROUP_ID_TEXTBOX_SIZE = (30, 30)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
-
+LEVELS_DIR = 'level_files'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock',
          'initstack', 'stack', 'flipper', 'submitter', 'card', 'piston'}
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'piston'}
@@ -22,9 +25,16 @@ def inside_borders(pos):
 
 def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
-    Returns html-colored with given color string s 
+    Returns html-colored with given color string s
     '''
     return f'<font color={color} size={size}>{s}</font>'
+
+
+def get_level_number_from_filename(filename):
+    import re
+    _, level_number = re.compile(
+            f'({LEVELS_DIR}/)?level(.+).txt').search(filename).groups()
+    return level_number
 
 
 def load_level_filenames():
@@ -32,15 +42,18 @@ def load_level_filenames():
         try:
             return int(file[5:-4])
         except ValueError:
-            return -1
+            return 10000
     import os
-    level_files = os.listdir('level_files')
+    level_files = os.listdir(LEVELS_DIR)
 
     result = [el for el in level_files if el.startswith(
         'level') and el.endswith('.txt')]
     result.sort(key=key)
     return result
 
+
+def create_progress_file(level_filenames):
+    progress = {filename: {'solved': False, 'solution': ''} for filename in level_filenames}
 
 HELP_TEXT = {
     'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units',
@@ -77,3 +90,7 @@ def help_commands_processing(raw_command: str):
         s3 = f'To read the general rules type<br>{paint("help rules", "#4BDC28")}<br>'
         s4 = f'To open the whole manual type<br>{paint("help manual", "#4BDC28")}<br>'
         return s1 + s2 + s3 + s4
+
+
+if __name__ == '__main__':
+    print(get_level_number_from_filename('level2.txt'))
