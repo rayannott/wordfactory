@@ -511,7 +511,7 @@ class Stack(Container):
 
     def __str__(self):
         s = ','.join(map(str, self.stack))
-        return f'S[{s}]'
+        return f'[{s}]'
 
 
 class InitStack(Stack):
@@ -529,7 +529,7 @@ class InitStack(Stack):
 
     def __str__(self):
         s = ''.join(map(lambda x: x.letter, self.stack))
-        return f'{"{"}{s}{"}"}'
+        return f'{s}'
 
 
 class Submitter(Container):
