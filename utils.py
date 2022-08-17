@@ -26,6 +26,21 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
     return f'<font color={color} size={size}>{s}</font>'
 
+def load_level_filenames():
+    def key(file):
+        try:
+            return int(file[5:-4])
+        except ValueError:
+            return -1
+    import os
+    level_files = os.listdir('level_files')
+
+    result = [el for el in level_files if el.startswith('level') and el.endswith('.txt')]
+    result.sort(key=key)
+    return result
+
+
+
 
 HELP_TEXT = {
     'rules': 'bla bla bla',
