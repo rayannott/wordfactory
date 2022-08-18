@@ -56,25 +56,51 @@ def create_progress_file(level_filenames):
     progress = {filename: {'solved': False, 'solution': ''} for filename in level_filenames}
 
 HELP_TEXT = {
-    'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units',
-    'card':  'A unit with a letter (or a period) on it. They need to be submitted to the Submitter in an order so that one of the words is created.',
-    'initstack': 'An immovable unit in which usually the letter Cards are stored. You can take from it but cannot put back.',
-    'submitter': 'Put Cards here',
+    'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units. The latter are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.',
+    
+    'card':  
+    'A unit with a letter (or a period) on it. Needs to be submitted to the Submitter in such an order that one of the words is created.',
+    
+    'initstack': 
+    'An immovable unit in which usually the letter Cards are stored. You can take from it but cannot put back.',
+    
+    'submitter': 
+    'Put Cards here. Beware: what has been submitted cannot be taken back!',
 
-    'manipulator': 'Main force of your factory. It can move units by taking them from adjacent cells. Rotate its hand to choose where to place whatever the manipulator is holding.<br>' +
-    paint('commands:<br>', '#ADE21E') + f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in direction it is facing<br>' + f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in direction it is facing<br>' +
+    'manipulator': 
+    '[controllable]<br>Main force of your factory. It can move units by taking them from adjacent cells.<br>Rotate its hand to choose where to place whatever the manipulator is holding.<br>' +
+    paint('commands:<br>', '#ADE21E') + 
+    f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' + 
+    f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in the direction it is facing<br>' +
     f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
-    f'{paint("r", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees<br>',
+    f'{paint("r", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees',
 
-    'conveyorbelt': '',
+    'conveyorbelt': 
+    '[controllable]<br>Another controllable unit which is also a container (one can put on or take from it). A conveyorbelt is oriented horisontally or vertically.<br>' + 
+    paint('commands:<br>', '#ADE21E') + 
+    f'{paint("+", "#ADE21E")} -- push a unit off of itself in the positive direction (right, down)<br>' + 
+    f'{paint("-", "#ADE21E")} -- push a unit off of itself in the negative direction (left, up)',
 
-    'flipper': '',
+    'flipper': 
+    '[controllable]<br>A unit that can flip other units.<br>' +
+    paint('commands:<br>', '#ADE21E') + 
+    f'{paint("f", "#ADE21E")} -- if possible, flip a unit in front of it (in the direction it is facing)<br>' + 
+    'Flippable units include: conveyorbelt (changes orientation), piston, flipper, portal (switches off so that it can no longer send a unit that has been placed on it).',
 
-    'piston': '',
+    'piston': 
+    '[controllable]<br>A unit that can push other units.<br>' + 
+    paint('commands:<br>', '#ADE21E') + 
+    f'{paint("x", "#ADE21E")} -- extend pushing a unit in front of it to the next cell in that exact direction<br>' + 
+    'Pistons can push non-empty containers (stacks, conveyorbelts, portals).',
 
-    'rock': '',
-    'portal': '',
-    'stack': '',
+    'portal':
+    'A unit that has a pair - other portal unit bound to it. If placed on an active portal, units are teleported to the portal\'s counterpart if it is not occupied.',
+
+    'stack': 
+    'A container that can hold multiple items. Imitates a functionality of a stack data structure.<br>' + 
+    'Stacks cannot be put inside of other stacks.',
+
+    'rock': 'A unit which cannot be pushed or moved.',
 }
 
 
