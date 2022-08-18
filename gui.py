@@ -155,7 +155,9 @@ class LogTextBox(UITextBox):
 class ManualMessage(UIMessageWindow):
     def __init__(self, manager):
         rect = pygame.Rect((200, 200), (700, 700))
-        html_message = 'help'
+        html_message = '<br>'.join([
+            f'---{paint(unit.capitalize(), "#0F7CFF")}---<br>{HELP_TEXT[unit]}<br>' for unit, unit_help_text in HELP_TEXT.items()
+        ])
         super().__init__(rect, html_message, manager, window_title='Manual')
 
 
@@ -195,7 +197,7 @@ class Gui(Game):
 
         level_number = get_level_number_from_filename(level_file)
         words_str = paint(' '.join(self.WORDS), '#E9D885', size=5)
-        self.init_text = f'Level {paint(level_number, "#17D36A")} has been opened<br><br>' + \
+        self.init_text = f'Level {paint(level_number, "#17D36A")}<br><br>' + \
             f'{paint("goal")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
@@ -439,7 +441,8 @@ class LevelPicker():
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
             elif event.key == pygame.K_RETURN:
-                print('selected:', self.level_buttons_panel.buttons[self.chosen_button_index].text)
+                print(
+                    'selected:', self.level_buttons_panel.buttons[self.chosen_button_index].text)
                 this_level = self.level_buttons_panel.level_filenames[self.chosen_button_index]
                 solution = GameWindow(
                     level_file=LEVELS_DIR + '/' + this_level)
