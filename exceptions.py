@@ -55,8 +55,10 @@ class ObjectUnflippable(Warning):
 class PushingFieldBorders(Warning):
     pass
 
+
 class PushingOutsideOfField(CustomException):
     pass
+
 
 class OccupiedContainer(CustomException):
     pass
@@ -135,6 +137,7 @@ class GroupOfDifferentTypes(LevelCreationError):
 class SubmitterNotFound(LevelCreationError):
     pass
 
+
 class WordsNotSpecified(LevelCreationError):
     pass
 # ...
@@ -154,10 +157,6 @@ class IncorrectLoopSyntax(CommandSyntaxError):
 
 class IncorrectReferencesSyntax(CommandSyntaxError):
     pass
-
-
-# class GroupInsideLoop(CommandWarning):
-#     pass
 
 
 class EmptyPrompt(CommandWarning):

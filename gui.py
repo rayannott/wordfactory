@@ -146,12 +146,6 @@ class LogTextBox(UITextBox):
         self.append_html_text(text)
 
 
-# class LettersSubmittedPanel(UIPanel):
-#     pass
-
-
-# class LettersStackPanel(UIPanel):
-#     pass
 class ManualMessage(UIMessageWindow):
     def __init__(self, manager):
         rect = pygame.Rect((200, 200), (700, 700))
