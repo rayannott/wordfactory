@@ -13,8 +13,8 @@ GROUP_ID_TEXTBOX_SIZE = (30, 30)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 LEVELS_DIR = 'level_files'
-UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock',
-         'initstack', 'stack', 'flipper', 'submitter', 'card', 'piston'}
+UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
+         'submitter', 'card', 'piston', 'anvil', 'typo'}
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'piston'}
 
 
@@ -33,7 +33,7 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
 def get_level_number_from_filename(filename):
     import re
     _, level_number = re.compile(
-            f'({LEVELS_DIR}/)?level(.+).txt').search(filename).groups()
+        f'({LEVELS_DIR}/)?level(.+).txt').search(filename).groups()
     return level_number
 
 
@@ -53,52 +53,61 @@ def load_level_filenames():
 
 
 def create_progress_file(level_filenames):
-    progress = {filename: {'solved': False, 'solution': ''} for filename in level_filenames}
+    progress = {filename: {'solved': False, 'solution': ''}
+                for filename in level_filenames}
+
 
 HELP_TEXT = {
-    'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units. The latter are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.',
-    
-    'card':  
+    'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units; the goal is to create one of the words from inside of the curly braces shown after the level number.<br>' +
+    'Controllable units are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.<br>' + 
+    paint('Controls', '#62AAF7') + ':<br>-to execute a single command ([group_id][command_character]) press Return;<br>-to compile a sequence of commands* press Shift+Return, then press Return to execute selected command (press Esc to exit this mode) or Ctrl+Return to let it slowly go through the remaining commands;<br>' + 
+    '-to execute a sequence of commands instantly press Ctrl+Shift+Return.<br>',
+
+    'card':
     'A unit with a letter (or a period) on it. Needs to be submitted to the Submitter in such an order that one of the words is created.',
-    
-    'initstack': 
+
+    'initstack':
     'An immovable unit in which usually the letter Cards are stored. You can take from it but cannot put back.',
-    
-    'submitter': 
+
+    'submitter':
     'Put Cards here. Beware: what has been submitted cannot be taken back!',
 
-    'manipulator': 
+    'manipulator':
     '[controllable]<br>Main force of your factory. It can move units by taking them from adjacent cells.<br>Rotate its hand to choose where to place whatever the manipulator is holding.<br>' +
-    paint('commands:<br>', '#ADE21E') + 
-    f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' + 
+    paint('commands:<br>', '#ADE21E') +
+    f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' +
     f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in the direction it is facing<br>' +
     f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
     f'{paint("r", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees',
 
-    'conveyorbelt': 
-    '[controllable]<br>Another controllable unit which is also a container (one can put on or take from it). A conveyorbelt is oriented horisontally or vertically.<br>' + 
-    paint('commands:<br>', '#ADE21E') + 
-    f'{paint("+", "#ADE21E")} -- push a unit off of itself in the positive direction (right, down)<br>' + 
+    'conveyorbelt':
+    '[controllable]<br>Another controllable unit which is also a container (one can put on or take from it). A conveyorbelt is oriented horisontally or vertically.<br>' +
+    paint('commands:<br>', '#ADE21E') +
+    f'{paint("+", "#ADE21E")} -- push a unit off of itself in the positive direction (right, down)<br>' +
     f'{paint("-", "#ADE21E")} -- push a unit off of itself in the negative direction (left, up)',
 
-    'flipper': 
+    'flipper':
     '[controllable]<br>A unit that can flip other units.<br>' +
-    paint('commands:<br>', '#ADE21E') + 
-    f'{paint("f", "#ADE21E")} -- if possible, flip a unit in front of it (in the direction it is facing)<br>' + 
-    'Flippable units include: conveyorbelt (changes orientation), piston, flipper, portal (switches off so that it can no longer send a unit that has been placed on it).',
+    paint('commands:<br>', '#ADE21E') +
+    f'{paint("f", "#ADE21E")} -- if possible, flip a unit in front of it (in the direction it is facing)<br>' +
+    'Flippable units include: conveyorbelt (changes orientation), piston, flipper, portal (switches off so that it can no longer teleport a unit away from it).',
 
-    'piston': 
-    '[controllable]<br>A unit that can push other units.<br>' + 
-    paint('commands:<br>', '#ADE21E') + 
-    f'{paint("x", "#ADE21E")} -- extend pushing a unit in front of it to the next cell in that exact direction<br>' + 
+    'piston':
+    '[controllable]<br>A unit that can push other units.<br>' +
+    paint('commands:<br>', '#ADE21E') +
+    f'{paint("x", "#ADE21E")} -- extend pushing a unit in front of it to the next cell in that exact direction<br>' +
     'Pistons can push non-empty containers (stacks, conveyorbelts, portals).',
 
     'portal':
     'A unit that has a pair - other portal unit bound to it. If placed on an active portal, units are teleported to the portal\'s counterpart if it is not occupied.',
 
-    'stack': 
-    'A container that can hold multiple items. Imitates a functionality of a stack data structure.<br>' + 
+    'stack':
+    'A container that can hold multiple items. Imitates a functionality of a stack data structure.<br>' +
     'Stacks cannot be put inside of other stacks.',
+
+    'anvil':
+    'Anvil is a unit that crushes (deletes from the field) any unit it is placed on.<br>' +
+    'Crushing a portal with an anvil deactivates portal\'s counterpart.',
 
     'rock': 'A unit which cannot be pushed or moved.',
 }
@@ -107,7 +116,7 @@ HELP_TEXT = {
 def help_commands_processing(raw_command: str):
     command = raw_command[4:].strip()
     if command in HELP_TEXT:
-        return f'---{paint(command.capitalize(), "#0F7CFF")}---<br>{HELP_TEXT[command]}<br>'
+        return f'----{paint(command.capitalize(), "#0F7CFF")}----<br>{HELP_TEXT[command]}<br>'
     elif command == 'manual':
         return '@manual'
     else:
