@@ -11,7 +11,7 @@ from command_handler import CommandHandler
 class Unit:
     def __init__(self, id, pos, TYPE, IN_GROUP=None,
                  IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False,
-                 IS_COUPLED=False, IS_CONTAINER=False):
+                 IS_COUPLED=False, IS_CONTAINER=False, is_active=True):
         self.id = id
         self.pos = pos
         self.TYPE = TYPE
@@ -21,13 +21,14 @@ class Unit:
         self.IS_CONTROLLABLE = IS_CONTROLLABLE
         self.IS_COUPLED = IS_COUPLED
         self.IS_CONTAINER = IS_CONTAINER
+        self.is_active = is_active
 
     def describe(self):
-        return f'id={self.id} group_id={self.IN_GROUP} pos={self.pos} type={self.TYPE} controllable={self.IS_CONTROLLABLE} object={self}'
+        return f'id={self.id} group_id={self.IN_GROUP} pos={self.pos} type={self.TYPE} controllable={self.IS_CONTROLLABLE} is_active={self.is_active} object={self}'
 
 
 class Container(Unit):
-    def __init__(self, id, pos, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True):
+    def __init__(self, id, pos, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=True, is_active=True):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.holds = holds
@@ -52,7 +53,7 @@ class Container(Unit):
 
 
 class Coupled(Container):
-    def __init__(self, id, pos, COUPLE_ID, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True):
+    def __init__(self, id, pos, COUPLE_ID, TYPE, holds=None, IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=True, IS_CONTAINER=True, is_active=True):
         self.COUPLE_ID = COUPLE_ID
         self.COUPLE: Coupled = None
         super().__init__(id, pos, TYPE, holds, IN_GROUP, IS_MOVABLE,
@@ -80,7 +81,7 @@ class Cell:
                     # destroying units with an Anvil
                     if isinstance(self.contents, Submitter):
                         raise CrushingSubmitter('Nice try looser hahahahaah')
-                    self.contents.pos = None
+                    self.contents.is_active = False
                     if isinstance(self.contents, Portal):
                         self.contents.COUPLE.active = False
                     if isinstance(self.contents, Typo):
@@ -121,7 +122,7 @@ class Game:
         self.submitted = []
         self.typos = []
         self.NOTE = []
-        
+
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
@@ -130,10 +131,9 @@ class Game:
         self.command_history = []
 
     def is_victory(self):
-        return ''.join(self.submitted) in self.WORDS and all([typo.eliminated for typo in self.typos])
+        return (''.join(self.submitted) in self.WORDS, all([typo.eliminated for typo in self.typos]))
 
     def create_empty_field(self):
-        # TODO: edit board_size 8x12 -> 6x10
         self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(BOARD_SIZE[1])]
                                         for i in range(BOARD_SIZE[0])]
 
@@ -247,7 +247,7 @@ class Game:
         for obj in self.objects:
             if isinstance(obj, Typo):
                 self.typos.append(obj)
-    
+
     def fill_field(self):
         for obj in self.objects:
             pos = obj.pos
@@ -256,40 +256,41 @@ class Game:
     def execute(self, obj: Unit, command):
         if obj.pos is None:
             raise ControllableIsInsideContainer
-        if obj.TYPE == 'manipulator':
-            if command == 't':
-                obj.c_take(game=self)
-            elif command == 'p':
-                obj.c_put(game=self)
-            elif command == 'c':
-                obj.c_rotate_clockwise()
-            elif command == 'r':
-                obj.c_rotate_counter_clockwise()
-            else:
-                raise UnknownCommand(
-                    f'Unknown command for {obj.TYPE}: {command}')
-        elif obj.TYPE == 'piston':
-            if command == 'x':
-                obj.c_extend(game=self)
-            else:
-                raise UnknownCommand(
-                    f'Unknown command for {obj.TYPE}: {command}')
-        elif obj.TYPE == 'conveyorbelt':
-            if command == '+':
-                obj.c_shift_positive(game=self)
-            elif command == '-':
-                obj.c_shift_negative(game=self)
-            else:
-                raise UnknownCommand(
-                    f'Unknown command for {obj.TYPE}: {command}')
-        elif obj.TYPE == 'flipper':
-            if command == 'f':
-                obj.c_flip_unit(game=self)
-            else:
-                raise UnknownCommand(
-                    f'Unknown command for {obj.TYPE}: {command}')
-        elif obj.TYPE == 'swapper':
-            pass
+        if obj.is_active:
+            if obj.TYPE == 'manipulator':
+                if command == 't':
+                    obj.c_take(game=self)
+                elif command == 'p':
+                    obj.c_put(game=self)
+                elif command == 'c':
+                    obj.c_rotate_clockwise()
+                elif command == 'r':
+                    obj.c_rotate_counter_clockwise()
+                else:
+                    raise UnknownCommand(
+                        f'Unknown command for {obj.TYPE}: {command}')
+            elif obj.TYPE == 'piston':
+                if command == 'x':
+                    obj.c_extend(game=self)
+                else:
+                    raise UnknownCommand(
+                        f'Unknown command for {obj.TYPE}: {command}')
+            elif obj.TYPE == 'conveyorbelt':
+                if command == '+':
+                    obj.c_shift_positive(game=self)
+                elif command == '-':
+                    obj.c_shift_negative(game=self)
+                else:
+                    raise UnknownCommand(
+                        f'Unknown command for {obj.TYPE}: {command}')
+            elif obj.TYPE == 'flipper':
+                if command == 'f':
+                    obj.c_flip_unit(game=self)
+                else:
+                    raise UnknownCommand(
+                        f'Unknown command for {obj.TYPE}: {command}')
+            elif obj.TYPE == 'swapper':
+                pass
 
     # single_command_raw):
     def execute_on_group(self, single_command: Tuple[int, str]):
@@ -318,7 +319,7 @@ class Group:
 
 
 class Card(Unit):
-    def __init__(self, id, pos, letter='.', TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+    def __init__(self, id, pos, letter='.', TYPE='card', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False, is_active=True):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.letter = letter
@@ -329,7 +330,7 @@ class Card(Unit):
 
 class Manipulator(Unit):
     def __init__(self, id, pos, direction=0, holds=None, TYPE='manipulator', IN_GROUP=None, IS_MOVABLE=True,
-                 IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
+                 IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False, is_active=True):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.direction = direction
@@ -379,7 +380,7 @@ class Manipulator(Unit):
 
 
 class ConveyorBelt(Container):
-    def __init__(self, id, pos, orientation='h', TYPE='conveyorbelt', IN_GROUP=None, holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=True):
+    def __init__(self, id, pos, orientation='h', TYPE='conveyorbelt', IN_GROUP=None, holds=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=True, is_active=True):
         super().__init__(id, pos, TYPE, IN_GROUP, holds, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.orientation = orientation
@@ -402,7 +403,7 @@ class ConveyorBelt(Container):
                 self.holds = None
             else:
                 raise PutOutsideOfField(
-                'Trying to put outside of the field borders')
+                    'Trying to put outside of the field borders')
 
     def c_shift_negative(self, game: Game):
         if self.orientation == 'h':
@@ -429,7 +430,7 @@ class ConveyorBelt(Container):
 
 
 class Piston(Unit):
-    def __init__(self, id, pos, direction, TYPE='piston', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False):
+    def __init__(self, id, pos, direction, TYPE='piston', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=True, IS_COUPLED=False, IS_CONTAINER=False, is_active=True):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.direction = direction
@@ -444,19 +445,23 @@ class Piston(Unit):
             if game.field[position_to_push[0]][position_to_push[1]].contents is not None:
                 if game.field[position_to_push[0]][position_to_push[1]].contents.IS_MOVABLE:
                     if inside_borders(position_to_push_to):
-                        game.field[position_to_push_to[0]][position_to_push_to[1]].put(game.field[position_to_push[0]][position_to_push[1]].contents)
-                        game.field[position_to_push[0]][position_to_push[1]].contents = None
+                        game.field[position_to_push_to[0]][position_to_push_to[1]].put(
+                            game.field[position_to_push[0]][position_to_push[1]].contents)
+                        game.field[position_to_push[0]
+                                   ][position_to_push[1]].contents = None
                     else:
-                        raise PushingOutsideOfField('Pushing outside of the field is not allowed')
+                        raise PushingOutsideOfField(
+                            'Pushing outside of the field is not allowed')
                 else:
-                    raise ImmovableUnit(f'Unit {game.field[position_to_push[0]][position_to_push[1]].contents.TYPE} cannot be moved (pushed)')
+                    raise ImmovableUnit(
+                        f'Unit {game.field[position_to_push[0]][position_to_push[1]].contents.TYPE} cannot be moved (pushed)')
         else:
             raise PushingFieldBorders('Nice try pushing the borders')
 
     def flip(self):
         self.direction += 1
         self.direction %= 4
-    
+
     def __str__(self):
         return 'P'
 
@@ -555,7 +560,8 @@ class Submitter(Container):
         if obj.TYPE == 'card':
             self.submitted.append(obj.letter)
         else:
-            raise NotCardSubmitted('Only Card units can be submitted to the Submitter')
+            raise NotCardSubmitted(
+                'Only Card units can be submitted to the Submitter')
 
     def is_empty(self):
         return not bool(self.submitted)
@@ -600,25 +606,28 @@ class Rock(Unit):
     def __init__(self, id, pos, TYPE='rock', IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+
     def __str__(self):
         return ''
-    
+
 
 class Anvil(Unit):
     def __init__(self, id, pos, TYPE='anvil', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
-    
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+
     def __str__(self):
-        return 'Avl'
+        return 'A'
+
 
 class Typo(Unit):
     def __init__(self, id, pos, TYPE='typo', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
-        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE,
+                         IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.eliminated = False
-    
+
     def flip(self):
         self.eliminated = True
 
     def __str__(self):
-        return f'T'
-    
+        return f'{":" if self.eliminated else "!"}'
