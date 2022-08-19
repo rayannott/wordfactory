@@ -77,6 +77,27 @@
             }
         }
     },
+    "#anvil": {
+        "images": {
+            "normal_image": {
+                "path": "assets/anvil.png"
+            }
+        }
+    },
+    "#typo": {
+        "images": {
+            "normal_image": {
+                "path": "assets/typo.png"
+            }
+        }
+    },
+    "#typo_eliminated": {
+        "images": {
+            "normal_image": {
+                "path": "assets/typo_eliminated.png"
+            }
+        }
+    },
     "#stack": {
         "images": {
             "normal_image": {
