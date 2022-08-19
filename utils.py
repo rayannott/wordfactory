@@ -1,10 +1,11 @@
 import json
-
+import re
 
 DIRECTIONS = {
     0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)
     # up right down left
 }
+FRAMERATE = 30
 WINDOW_SIZE = (1200, 800)
 CELL_SIZE = (100, 100)
 MARGIN = 3
@@ -12,7 +13,7 @@ BOARD_SIZE = (6, 8)
 GROUP_ID_TEXTBOX_SIZE = (30, 30)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
-LEVELS_DIR = 'level_files'
+LEVELS_DIR = 'levels'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
          'submitter', 'card', 'piston', 'anvil', 'typo'}
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'piston'}
@@ -31,23 +32,27 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
 
 
 def get_level_number_from_filename(filename):
-    import re
     _, level_number = re.compile(
         f'({LEVELS_DIR}/)?level(.+).txt').search(filename).groups()
     return level_number
 
 
+
 def load_level_filenames():
     def key(file):
-        try:
-            return int(file[5:-4])
-        except ValueError:
+        match = level_filename_pattern.match(file)
+        if not match:
             return 10000
+        lvl_num, _, sub_lvl_num = match.groups()
+        if sub_lvl_num:
+            return int(lvl_num) + int(sub_lvl_num)/1000
+        return int(lvl_num)
+    
     import os
     level_files = os.listdir(LEVELS_DIR)
 
-    result = [el for el in level_files if el.startswith(
-        'level') and el.endswith('.txt')]
+    level_filename_pattern = re.compile(r'level(\d+)(\.(\d+))?.txt')
+    result = [el for el in level_files if el.startswith('level') and el.endswith('.txt')]
     result.sort(key=key)
     return result
 
@@ -106,10 +111,13 @@ HELP_TEXT = {
     'Stacks cannot be put inside of other stacks.',
 
     'anvil':
-    'Anvil is a unit that crushes (deletes from the field) any unit it is placed on.<br>' +
-    'Crushing a portal with an anvil deactivates portal\'s counterpart.',
+    'Anvil is a unit that crushes (deletes from the field) any unit it is placed on. Anvils cannot crush Submitters.<br>' +
+    'Crushing a portal with an anvil deactivates portal\'s counterpart. Crushing a typo with an anvil deactivates the typo.',
 
     'rock': 'A unit which cannot be pushed or moved.',
+
+    'typo':
+    '',
 }
 
 
