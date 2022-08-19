@@ -61,7 +61,6 @@ class CommandHandler:
         individual_commands = self.find_commands_on_single_groups(raw_text)
         merged = loops + individual_commands
         merged.sort(key=lambda x: x.span[0])
-        print(merged)
         for m in merged:
             if m.type == 'cmd':
                 result.extend(self.simple_command_sequence(m.cmd))
