@@ -22,10 +22,6 @@ class Unit:
         self.IS_COUPLED = IS_COUPLED
         self.IS_CONTAINER = IS_CONTAINER
 
-    def destroy(self):
-        # replaces itself with None object
-        pass
-
     def describe(self):
         return f'id={self.id} group_id={self.IN_GROUP} pos={self.pos} type={self.TYPE} controllable={self.IS_CONTROLLABLE} object={self}'
 
@@ -80,7 +76,18 @@ class Cell:
                 self.contents = self.pending
                 self.pending = None
             else:
-                if isinstance(self.contents, Container):
+                if isinstance(self.pending, Anvil):
+                    # destroying units with an Anvil
+                    if isinstance(self.contents, Submitter):
+                        raise CrushingSubmitter('Nice try looser hahahahaah')
+                    self.contents.pos = None
+                    if isinstance(self.contents, Portal):
+                        self.contents.COUPLE.active = False
+                    if isinstance(self.contents, Typo):
+                        self.contents.eliminated = True
+                    self.contents = self.pending
+                    self.pending = None
+                elif isinstance(self.contents, Container):
                     self.contents.put_object(self.pending)
                     self.pending = None
                     # TODO: need to clear pending
@@ -112,7 +119,9 @@ class Game:
         self.objects = []
         self.groups = []
         self.submitted = []
+        self.typos = []
         self.NOTE = []
+        
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
@@ -121,7 +130,7 @@ class Game:
         self.command_history = []
 
     def is_victory(self):
-        return ''.join(self.submitted) in self.WORDS
+        return ''.join(self.submitted) in self.WORDS and all([typo.eliminated for typo in self.typos])
 
     def create_empty_field(self):
         # TODO: edit board_size 8x12 -> 6x10
@@ -146,7 +155,9 @@ class Game:
             'Flipper': Flipper,
             'Portal': Portal,
             'Card': Card,
-            'Piston': Piston
+            'Piston': Piston,
+            'Anvil': Anvil,
+            'Typo': Typo
         }
         group_id = 0
         unit_id = 0
@@ -232,7 +243,11 @@ class Game:
                 )
                 self.objects[id].IN_GROUP = group_id
                 group_id += 1
-
+        # typos
+        for obj in self.objects:
+            if isinstance(obj, Typo):
+                self.typos.append(obj)
+    
     def fill_field(self):
         for obj in self.objects:
             pos = obj.pos
@@ -540,7 +555,7 @@ class Submitter(Container):
         if obj.TYPE == 'card':
             self.submitted.append(obj.letter)
         else:
-            raise NotCardSubmitted
+            raise NotCardSubmitted('Only Card units can be submitted to the Submitter')
 
     def is_empty(self):
         return not bool(self.submitted)
@@ -585,6 +600,25 @@ class Rock(Unit):
     def __init__(self, id, pos, TYPE='rock', IN_GROUP=None, IS_MOVABLE=False, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
         super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE,
                          IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
-
     def __str__(self):
         return ''
+    
+
+class Anvil(Unit):
+    def __init__(self, id, pos, TYPE='anvil', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=False, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+    
+    def __str__(self):
+        return 'Avl'
+
+class Typo(Unit):
+    def __init__(self, id, pos, TYPE='typo', IN_GROUP=None, IS_MOVABLE=True, IS_STACKABLE=True, IS_CONTROLLABLE=False, IS_COUPLED=False, IS_CONTAINER=False):
+        super().__init__(id, pos, TYPE, IN_GROUP, IS_MOVABLE, IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
+        self.eliminated = False
+    
+    def flip(self):
+        self.eliminated = True
+
+    def __str__(self):
+        return f'T'
+    
