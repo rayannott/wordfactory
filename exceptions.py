@@ -119,6 +119,9 @@ class NotCardSubmitted(CustomException):
 class PutOutsideOfField(CustomException):
     pass
 
+class CrushingSubmitter(CustomException):
+    pass
+
 # ...
 
 
