@@ -8,7 +8,7 @@ from pygame_gui.elements.ui_drop_down_menu import UIDropDownMenu
 from pygame_gui.windows import UIMessageWindow
 from pygame_gui.core import ObjectID
 
-from objects import Cell, Game
+from objects import Cell, ConveyorBelt, Game, Manipulator, Rock
 from exceptions import *
 from utils import *
 
@@ -70,6 +70,8 @@ class UICell(UIButton):
         return super().update(time_delta)
 
 # TODO: redraw
+
+
 class FieldPanel(UIPanel):
     def __init__(self, manager, field, **kwargs):
         self.manager = manager
@@ -115,8 +117,45 @@ class FieldPanel(UIPanel):
         for i in range(BOARD_SIZE[0]):
             for j in range(BOARD_SIZE[1]):
                 self.cells[i][j].kill()
-
         return super().kill()
+
+
+class FieldPanelCreationWindow(FieldPanel):
+    def __init__(self, manager, field, **kwargs):
+        super().__init__(manager, field, **kwargs)
+
+    def update_cursor(self, new_cursor):
+        self.cursor = new_cursor
+
+    def update_field(self):
+        for i in range(BOARD_SIZE[0]):
+            for j in range(BOARD_SIZE[1]):
+                if self.cells[i][j].object_id != self.cells[i][j].get_object_id():
+                    self.cells[i][j] = UICell(
+                        self.cells[i][j].relative_rect, self.field[i][j], self.manager)
+
+    def process_event(self, event):
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            for i, cells_row in enumerate(self.cells):
+                for j, cell in enumerate(cells_row):
+                    if event.ui_element == cell:
+                        if self.cursor is None:
+                            print('Nothing in the cursor')
+                        else:
+                            cell.cell.contents = self.cursor
+                            self.field[i][j] = cell.cell
+        return UIPanel.process_event(self, event)
+
+
+class UnitsPanel(UIPanel):
+    def __init__(self, manager, field_panel_rect, **kwargs):
+        self.manager = manager
+        rect = pygame.Rect((0, 0, 0, 0))
+        rect.size = (WINDOW_SIZE[0] - field_panel_rect.size[0] -
+                     MARGIN * 2, field_panel_rect.size[1])
+        rect.topright = field_panel_rect.topleft
+        super().__init__(rect,
+                         starting_layer_height=0, manager=manager, **kwargs)
 
 
 class CommandInput(UITextEntryLine):
@@ -183,6 +222,8 @@ class Gui(Game):
         self.command_input.focus()
         self.command_feedback = CommandFeedback(
             self.ui_manager, self.field_panel.rect, self.command_input.rect)
+        self.notifications_shown = SimpleNamespace(
+            typos_left=False, typos_eliminated=False)
 
         dummy_button_rect = pygame.Rect((0, 0, 0, 0))
         dummy_button_rect.size = (100, 60)
@@ -235,23 +276,6 @@ class Gui(Game):
             if event.type == pygame.KEYDOWN:
                 if shift_mode and ctrl_mode:
                     if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
-                        print('instant execution')
-                        raw_commands = self.command_input.get_text()
-                        self.command_history.append(raw_commands)
-                        self.command_input.set_text('')
-                        try:
-                            commands_, _ = self.command_handler.get_command_sequence(
-                                    raw_commands)
-                            print(commands_)
-                            for cmd_ in commands_:
-                                self.try_execute_on_group(cmd_)
-                        except Warning as w:
-                            self.log_warning(w)
-                        except CustomException as e:
-                            self.process_exception(e)
-                        
-                elif shift_mode:
-                    if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
                         # compile commands and activate multiple_cmds_mode
                         raw_commands = self.command_input.get_text()
                         self.command_history.append(raw_commands)
@@ -262,6 +286,21 @@ class Gui(Game):
                             self.multiple_cmds_mode.is_active = True
                             self.command_input.unfocus()
                             print('start steps')
+                        except Warning as w:
+                            self.log_warning(w)
+                        except CustomException as e:
+                            self.process_exception(e)
+                elif shift_mode:
+                    if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
+                        raw_commands = self.command_input.get_text()
+                        print('instant execution: ', raw_commands)
+                        self.command_history.append(raw_commands)
+                        self.command_input.set_text('')
+                        try:
+                            commands_, _ = self.command_handler.get_command_sequence(
+                                raw_commands)
+                            for cmd_ in commands_:
+                                self.try_execute_on_group(cmd_)
                         except Warning as w:
                             self.log_warning(w)
                         except CustomException as e:
@@ -317,7 +356,8 @@ class Gui(Game):
                                 # print out info about all objects and command history
                                 for obj in self.objects:
                                     print(obj.describe())
-                                print('typos:', ' '.join([f'{typo.pos}{typo.eliminated}' for typo in self.typos]))
+                                print('typos:', ' '.join(
+                                    [f'{typo.pos}{typo.eliminated}' for typo in self.typos]))
                                 print('commands:', ' '.join(
                                     self.command_history))
                                 self.logs.log(
@@ -338,14 +378,21 @@ class Gui(Game):
                                 single_command = self.command_handler.commands_on_single_group(
                                     raw_command)[0]
                                 self.try_execute_on_group(single_command)
-                                
                             except Warning as w:
                                 self.log_warning(w)
                         self.command_input.set_text('')
                     elif event.key == pygame.K_DELETE:
                         pass
 
-            self.victory = self.is_victory()
+            word_created, typos_eliminated = self.is_victory()
+            self.victory = word_created and typos_eliminated
+            if not self.notifications_shown.typos_left and word_created and not typos_eliminated:
+                self.logs.log(
+                    paint('There are some typos left!<br>', '#F0BF0D'))
+                self.notifications_shown.typos_left = True
+            if not self.notifications_shown.typos_eliminated and typos_eliminated and self.typos:
+                self.logs.log(paint('No typos (left)!<br>', '#88F07D'))
+                self.notifications_shown.typos_eliminated = True
             self.update()
 
     def update(self):
@@ -511,7 +558,7 @@ def GameWindow(level_file):
             f'{e.__class__.__name__} exception:<br>[{e}]', '#FF0F0F'), manager)
 
     while is_running:
-        time_delta = clock.tick(30)/1000.0
+        time_delta = clock.tick(FRAMERATE)/1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
@@ -533,6 +580,67 @@ def GameWindow(level_file):
     # game.kill()
 
 
+def LevelCreationWindow():
+    pygame.init()
+    pygame.display.set_caption('Pick a level...')
+    clock = pygame.time.Clock()
+    window_surface = pygame.display.set_mode((WINDOW_SIZE[0], WINDOW_SIZE[1]))
+    window_size = window_surface.get_rect().size
+    background = pygame.Surface(window_size)
+    background.fill(pygame.Color('#000000'))
+    manager = pygame_gui.UIManager(
+        window_size, theme_path='theme.json', enable_live_theme_updates=False)
+    level_creator = LevelCreator(manager, background, window_size)
+
+    is_running = True
+    while is_running:
+        time_delta = clock.tick(FRAMERATE)/1000.0
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                is_running = False
+            manager.process_events(event)
+            level_creator.process_event(event)
+        manager.update(time_delta)
+        window_surface.blit(background, (0, 0))
+        manager.draw_ui(window_surface)
+        pygame.display.update()
+
+
+class LevelCreator:
+    def __init__(self, manager, background, window_surface):
+        self.manager = manager
+        self.background = background
+        self.window_surface = window_surface
+        self.cursor = None
+        self.id = 0
+        self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(BOARD_SIZE[1])]
+                                        for i in range(BOARD_SIZE[0])]
+        self.field_panel = FieldPanelCreationWindow(self.manager, self.field)
+
+        self.units_panel = UnitsPanel(
+            self.manager, self.field_panel.field_panel_rect)
+
+    def process_event(self, event):
+        self.update()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                for i, _row in enumerate(self.field):
+                    for j, _el in enumerate(_row):
+                        print(_el.contents, sep=' ')
+                    print('___')
+            elif event.key == pygame.K_m:
+                self.cursor = Manipulator(self.id, None)
+            elif event.key == pygame.K_c:
+                self.cursor = ConveyorBelt(self.id, None)
+            elif event.key == pygame.K_r:
+                self.cursor = Rock(self.id, None)
+
+    def update(self):
+        self.field_panel.update_cursor(self.cursor)
+        self.field = self.field_panel.field
+        self.field_panel.update_field()
+
+
 def LevelPickerWindow():
     pygame.init()
     pygame.display.set_caption('Pick a level...')
@@ -549,7 +657,7 @@ def LevelPickerWindow():
 
     is_running = True
     while is_running:
-        time_delta = clock.tick(30)/1000.0
+        time_delta = clock.tick(FRAMERATE)/1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
@@ -578,7 +686,7 @@ def MenuWindow():
 
     is_running = True
     while is_running:
-        time_delta = clock.tick(30)/1000.0
+        time_delta = clock.tick(FRAMERATE)/1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
@@ -596,6 +704,7 @@ def MenuWindow():
 
 def main():
     LevelPickerWindow()
+    # LevelCreationWindow()
 
 
 if __name__ == '__main__':
