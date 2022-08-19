@@ -45,6 +45,10 @@ class UICell(UIButton):
                 return f'#flipper_{this_unit.direction}'
             elif this_unit.TYPE == 'piston':
                 return f'#piston_{this_unit.direction}'
+            elif this_unit.TYPE == 'anvil':
+                return f'#anvil'
+            elif this_unit.TYPE == 'typo':
+                return f'#typo{"_eliminated" if this_unit.eliminated else ""}'
             elif this_unit.TYPE in UNITS:
                 return f'#{this_unit.TYPE}'
             else:
@@ -65,7 +69,7 @@ class UICell(UIButton):
             self.group_id_textbox.hide()
         return super().update(time_delta)
 
-
+# TODO: redraw
 class FieldPanel(UIPanel):
     def __init__(self, manager, field, **kwargs):
         self.manager = manager
@@ -191,7 +195,7 @@ class Gui(Game):
 
         level_number = get_level_number_from_filename(level_file)
         words_str = paint(' '.join(self.WORDS), '#E9D885', size=5)
-        self.init_text = f'Level {paint(level_number, "#17D36A")}<br><br>' + \
+        self.init_text = f'Level {paint(level_number, "#17D36A")}<br>' + \
             f'{paint("goal")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
@@ -200,13 +204,6 @@ class Gui(Game):
         self.multiple_cmds_mode = SimpleNamespace(
             is_active=False, commands=[], commands_to_display=[],
             current_cmd_index=0, run=False, last_time=None, DELAY=None)
-
-    def kill(self):
-        self.field_panel.kill()
-        self.logs.kill()
-        self.command_input.kill()
-        self.command_feedback.kill()
-        self.dummy_button.kill()
 
     def log_warning(self, w):
         self.logs.log(paint(f'{w.__class__.__name__} warning:<br>', '#F0BF0D'))
@@ -236,18 +233,35 @@ class Gui(Game):
             shift_mode = pygame.key.get_mods() & pygame.KMOD_SHIFT
             ctrl_mode = pygame.key.get_mods() & pygame.KMOD_CTRL
             if event.type == pygame.KEYDOWN:
-                if shift_mode:
+                if shift_mode and ctrl_mode:
+                    if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
+                        print('instant execution')
+                        raw_commands = self.command_input.get_text()
+                        self.command_history.append(raw_commands)
+                        self.command_input.set_text('')
+                        try:
+                            commands_, _ = self.command_handler.get_command_sequence(
+                                    raw_commands)
+                            print(commands_)
+                            for cmd_ in commands_:
+                                self.try_execute_on_group(cmd_)
+                        except Warning as w:
+                            self.log_warning(w)
+                        except CustomException as e:
+                            self.process_exception(e)
+                        
+                elif shift_mode:
                     if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
                         # compile commands and activate multiple_cmds_mode
-                        print('start steps')
                         raw_commands = self.command_input.get_text()
+                        self.command_history.append(raw_commands)
                         self.command_input.set_text('')
                         try:
                             self.multiple_cmds_mode.commands, self.multiple_cmds_mode.commands_to_display = self.command_handler.get_command_sequence(
                                 raw_commands)
-                            self.command_history.append(raw_commands)
                             self.multiple_cmds_mode.is_active = True
                             self.command_input.unfocus()
+                            print('start steps')
                         except Warning as w:
                             self.log_warning(w)
                         except CustomException as e:
@@ -256,8 +270,9 @@ class Gui(Game):
                     if self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
                         # run compiled commands
                         print('running')
+                        TOTAL_TIME = 4.0
                         self.multiple_cmds_mode.run = True
-                        self.multiple_cmds_mode.delay = 4.0 / \
+                        self.multiple_cmds_mode.delay = TOTAL_TIME / \
                             len(self.multiple_cmds_mode.commands)
                         self.multiple_cmds_mode.last_time = time()
                 else:
@@ -286,7 +301,6 @@ class Gui(Game):
                             self.command_input.set_text(
                                 self.command_history[-1])
                     elif event.key == pygame.K_RETURN:
-                        # run one single command
                         raw_command = self.command_input.get_text()
                         if raw_command.startswith('help'):
                             help = help_commands_processing(raw_command)
@@ -294,25 +308,26 @@ class Gui(Game):
                                 ManualMessage(self.ui_manager)
                             else:
                                 self.logs.log(help)
-                            self.command_input.set_text('')
-                        elif raw_command.startswith('\\'):
+                        elif raw_command.startswith('-'):
                             # run console commands
-                            if raw_command == '\\help':
+                            if raw_command == '-help':
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}:<br>')
-                            elif raw_command == '\\info':
+                            elif raw_command == '-info':
                                 # print out info about all objects and command history
                                 for obj in self.objects:
                                     print(obj.describe())
+                                print('typos:', ' '.join([f'{typo.pos}{typo.eliminated}' for typo in self.typos]))
                                 print('commands:', ' '.join(
                                     self.command_history))
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: game information has been printed to the console<br>')
                             else:
                                 self.logs.log(
-                                    f'{paint("CONSOLE", "#FA1041")}: try typing \\help<br>')
-                            self.command_input.set_text('')
+                                    f'{paint("CONSOLE", "#FA1041")}: try typing "-help"<br>')
                         else:
+                            # run one single command
+                            self.command_history.append(raw_command)
                             try:
                                 if not raw_command:
                                     raise EmptyPrompt(
@@ -322,19 +337,13 @@ class Gui(Game):
                                         f'{raw_command} is not valid single-command; use [group_id][command] syntax')
                                 single_command = self.command_handler.commands_on_single_group(
                                     raw_command)[0]
-                                self.command_history.append(raw_command)
                                 self.try_execute_on_group(single_command)
-                                self.command_input.set_text('')
+                                
                             except Warning as w:
                                 self.log_warning(w)
+                        self.command_input.set_text('')
                     elif event.key == pygame.K_DELETE:
                         pass
-                        # print('reset_game')
-                        # self.logs.log('reset game<br>')
-                        # self.reset_game_gui()
-            elif event.type == pygame_gui.UI_BUTTON_PRESSED:
-                if event.ui_element == self.dummy_button:
-                    print('hi')
 
             self.victory = self.is_victory()
             self.update()
@@ -346,6 +355,7 @@ class Gui(Game):
             self.command_feedback.set_text('')
             self.command_input.disable()
             self.command_feedback.disable()
+            self.field_panel.update_field(self.field)
             # self.field_panel.disable_uicells()
             print('commands:', ' '.join(self.command_history))
             self.active = False
