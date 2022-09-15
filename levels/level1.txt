@@ -1,0 +1,13 @@
+words: {HEY}
+letters: {HEY}
+0 0 InitStack
+0 1 Manipulator direction=3
+1 2 Manipulator direction=3
+2 3 Manipulator direction=3
+2 2 Rock
+0 2 Rock
+3 3 Submitter
+
+# Manipulators can move units around; rocks cannot be moved.
+# Type '0t' to take the first Card ('H') from the InitStack. Type 'help manipulator' to learn other manipulator's commands
+solution:

@@ -1,0 +1,22 @@
+words: {.}
+0 0 Card
+1 2 ConveyorBelt orientation='v'
+1 4 ConveyorBelt orientation='v'
+1 0 ConveyorBelt orientation='v'
+3 0 ConveyorBelt orientation='v'
+0 3 ConveyorBelt orientation='v'
+0 1 Manipulator
+2 1 Manipulator
+2 2 Manipulator
+3 3 Manipulator
+0 6 Manipulator
+3 1 Flipper direction=1
+1 3 Rock
+2 3 Rock
+0 7 Submitter
+3 6 Typo
+0 5 Typo
+
+groups:{3 4 5}
+
+# P.S. flippers can also eliminate typos

@@ -1,0 +1,13 @@
+words: {SOAP}
+letters: {SPAO}
+3 0 Submitter
+0 2 InitStack
+1 2 Piston direction=1
+2 0 Manipulator
+0 1 Manipulator
+2 1 Manipulator
+1 3 Rock
+3 1 Stack
+2 2 Flipper direction=0
+
+# pistons extend pushing units in front of them

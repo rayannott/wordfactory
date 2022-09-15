@@ -1,0 +1,14 @@
+words: {.}
+2 0 Portal COUPLE_ID=1
+1 2 Portal COUPLE_ID=0
+2 1 Portal COUPLE_ID=3
+3 1 Portal COUPLE_ID=2
+0 0 Card
+0 2 Rock
+0 1 Manipulator
+1 1 Manipulator
+2 3 Manipulator
+3 3 Manipulator
+3 5 Submitter
+
+# Portals send any unit placed on them to their counterparts.

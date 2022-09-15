@@ -1,0 +1,10 @@
+words: {PART TRAP}
+letters: {PART}
+2 0 InitStack
+1 0 Manipulator direction=2
+0 1 Manipulator direction=3
+1 1 Stack
+0 2 Submitter
+
+# stacks can store cards
+solution: 4[0trpc] 1r 4[1trpc] -> TRAP, 4[0tccpcc 1tccpcc] -> PART

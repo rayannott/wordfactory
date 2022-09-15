@@ -1,0 +1,13 @@
+words:{.}
+3 2 Submitter
+0 1 Portal COUPLE_ID=2
+0 5 Portal COUPLE_ID=1
+1 5 Manipulator
+2 5 Typo
+2 1 Typo
+2 4 Flipper direction=1
+0 2 Manipulator
+2 2 Manipulator
+0 3 Anvil
+1 6 Card
+1 2 Rock

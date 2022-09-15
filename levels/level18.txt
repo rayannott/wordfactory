@@ -1,0 +1,26 @@
+words:{JOY}
+2 3 Portal COUPLE_ID=1
+2 6 Portal COUPLE_ID=0
+4 3 ConveyorBelt
+4 4 ConveyorBelt
+4 5 ConveyorBelt
+3 5 ConveyorBelt
+3 7 ConveyorBelt
+4 0 Submitter
+0 5 Card letter='J'
+1 1 Card letter='O'
+0 6 Card letter='Y'
+0 3 ConveyorBelt orientation='v'
+2 2 ConveyorBelt orientation='v'
+0 4 Manipulator
+1 2 Manipulator
+3 4 Manipulator
+3 6 Manipulator
+1 6 Manipulator
+1 3 Flipper direction=0
+2 4 Piston direction=3
+2 7 Flipper direction=2
+
+groups:{2 3 4}
+
+# it is hard to make joy

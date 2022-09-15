@@ -1,0 +1,15 @@
+words:{.}
+1 1 Piston direction=1
+0 3 Piston direction=2
+1 4 Piston direction=2
+2 2 Piston direction=1
+3 5 Piston direction=3
+0 0 Card
+0 1 Manipulator
+0 2 ConveyorBelt orientation='v'
+3 2 Manipulator
+4 3 Submitter
+
+groups:{0 1 2 3 4}
+
+# push harder

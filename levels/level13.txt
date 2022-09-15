@@ -1,0 +1,13 @@
+words:{OKAY}
+0 0 Card letter='O'
+0 1 Card letter='K'
+0 2 Card letter='A'
+0 3 Card letter='Y'
+1 0 Manipulator
+1 1 Manipulator
+1 2 Manipulator
+2 3 Manipulator
+1 5 Submitter
+4 3 Submitter
+
+# Those two Submitters are equivalent (that is, they share a list of submitted cards)

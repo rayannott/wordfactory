@@ -1,0 +1,10 @@
+words: {OK KO}
+letters: {OK}
+1 0 InitStack
+1 1 Manipulator direction=3
+1 2 ConveyorBelt orientation='v'
+0 2 Submitter
+
+# Conveyor belts can slide the units over themselves.
+# Place a Card on the ConveyorBelt and type '1+' to slide the Card down or '1-' to slide it up (which of those commands fits?).
+solution: 
