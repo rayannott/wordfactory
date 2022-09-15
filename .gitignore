@@ -1,7 +1,6 @@
 venv/
-level.txt
 desktop.ini
-levels/
+levels/level_.txt
 __pycache__/
 progress.json
 gui.spec
