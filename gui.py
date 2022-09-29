@@ -362,6 +362,10 @@ class Gui(Game):
                                     self.command_history))
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: game information has been printed to the console<br>')
+                            elif raw_command == '-clear':
+                                print('clearing')
+                                self.logs = LogTextBox(self.ui_manager, self.field_panel.rect)
+                                self.logs.log(self.init_text)
                             else:
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: try typing "-help"<br>')
@@ -374,7 +378,7 @@ class Gui(Game):
                                         'There is nothing to execute')
                                 if not self.command_handler.pattern_cmds.match(raw_command):
                                     raise NotASingleCommand(
-                                        f'{raw_command} is not valid single-command; use [group_id][command] syntax')
+                                        f'{raw_command} is not valid single-command; use [group_id][command] syntax; for more info try "-help"')
                                 single_command = self.command_handler.commands_on_single_group(
                                     raw_command)[0]
                                 self.try_execute_on_group(single_command)
