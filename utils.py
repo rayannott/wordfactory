@@ -123,7 +123,6 @@ HELP_TEXT = {
 
 def help_commands_processing(raw_command: str):
     command = raw_command[5:].strip()
-    print(f'[{command}]')
     if command in HELP_TEXT:
         return f'----{paint(command.capitalize(), "#0F7CFF")}----<br>{HELP_TEXT[command]}<br>'
     elif command == 'manual':

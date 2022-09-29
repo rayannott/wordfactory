@@ -123,6 +123,7 @@ class Game:
         self.typos = []
         self.NOTE = []
 
+
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
