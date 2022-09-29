@@ -264,7 +264,7 @@ class Game:
                     obj.c_put(game=self)
                 elif command == 'c':
                     obj.c_rotate_clockwise()
-                elif command == 'r':
+                elif command == 'a':
                     obj.c_rotate_counter_clockwise()
                 else:
                     raise UnknownCommand(
