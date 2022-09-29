@@ -122,18 +122,16 @@ HELP_TEXT = {
 
 
 def help_commands_processing(raw_command: str):
-    command = raw_command[4:].strip()
+    command = raw_command[5:].strip()
+    print(f'[{command}]')
     if command in HELP_TEXT:
         return f'----{paint(command.capitalize(), "#0F7CFF")}----<br>{HELP_TEXT[command]}<br>'
     elif command == 'manual':
         return '@manual'
     else:
         s1 = 'To learn about units try these commands:<br>'
-        s2 = f'{paint("help", "#4BDC28")}<br>     {paint("<br>     ".join(UNITS), "#4BDC28")}<br>'
-        s3 = f'To read the general rules type<br>{paint("help rules", "#4BDC28")}<br>'
-        s4 = f'To open the whole manual type<br>{paint("help manual", "#4BDC28")}<br>'
+        s2 = f'{paint("-help", "#4BDC28")}<br>     {paint("<br>     ".join(UNITS), "#4BDC28")}<br>'
+        s3 = f'To read the general rules type<br>{paint("-help rules", "#4BDC28")}<br>'
+        s4 = f'To open the whole manual type<br>{paint("-help manual", "#4BDC28")}<br>'
         return s1 + s2 + s3 + s4
 
-
-if __name__ == '__main__':
-    print(get_level_number_from_filename('level2.txt'))
