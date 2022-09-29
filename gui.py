@@ -341,19 +341,19 @@ class Gui(Game):
                                 self.command_history[-1])
                     elif event.key == pygame.K_RETURN:
                         raw_command = self.command_input.get_text()
-                        if raw_command.startswith('help'):
-                            help = help_commands_processing(raw_command)
-                            if help == '@manual':
-                                ManualMessage(self.ui_manager)
-                            else:
-                                self.logs.log(help)
-                        elif raw_command.startswith('-'):
+                        if raw_command.startswith('-'):
                             # run console commands
-                            if raw_command == '-help':
+                            if raw_command.startswith('-help'):
                                 self.logs.log(
-                                    f'{paint("CONSOLE", "#FA1041")}:<br>')
+                                    f'{paint("CONSOLE", "#FA1041")}: requested help<br>')
+                                help = help_commands_processing(raw_command)
+                                if help == '@manual':
+                                    ManualMessage(self.ui_manager)
+                                else:
+                                    self.logs.log(help)
                             elif raw_command == '-info':
                                 # print out info about all objects and command history
+                                print('--- GAME INFO ---')
                                 for obj in self.objects:
                                     print(obj.describe())
                                 print('typos:', ' '.join(
@@ -667,6 +667,7 @@ def LevelPickerWindow():
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
+
 
 
 def MenuWindow():
