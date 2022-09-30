@@ -450,7 +450,7 @@ class LevelButtonsPanel(UIPanel):
         self.level_filenames = level_filenames
         # self.progress = progress
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
-        self.panel_rect.topleft = (100, 100)
+        self.panel_rect.topleft = (MARGIN, MARGIN)
         self.panel_rect.size = (WINDOW_SIZE[0] - 200, WINDOW_SIZE[1] - 200)
         self.grid_size = (8, 6)
         self.button_size = (121, 80)
@@ -498,6 +498,13 @@ class LevelButtonsPanel(UIPanel):
                     pygame.display.set_caption('Pick a level...')
         return super().process_event(event)
 
+class SettingsPanel(UIPanel):
+    def __init__(self, manager):
+        self.panel_rect = pygame.Rect((0, 0, 0, 0))
+        self.panel_rect.topleft = (WINDOW_SIZE[0] - 200 + MARGIN, MARGIN)
+        self.panel_rect.size = (200 - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
+        self.manager = manager
+        super().__init__(self.panel_rect, 0, self.manager)
 
 class LevelPicker():
     def __init__(self, manager, background, window_surface):
@@ -510,6 +517,7 @@ class LevelPicker():
         self.rect.size = (600, 50)
         self.level_buttons_panel = LevelButtonsPanel(
             self.manager, self.level_filenames)
+        self.settings_panel = SettingsPanel(self.manager)
         self.grid_size = (8, 6)
         self.chosen_button_index = 0
         self.chosen_button_index_prev = 0
@@ -595,6 +603,8 @@ def GameWindow(level_file):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 is_running = False
+            
+
 
             if not exception_caught:
                 game.process_event(event)
