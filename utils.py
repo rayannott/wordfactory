@@ -1,4 +1,3 @@
-import json
 import re
 
 DIRECTIONS = {
@@ -97,11 +96,13 @@ HELP_TEXT = {
     f'{paint("f", "#ADE21E")} -- if possible, flip a unit in front of it (in the direction it is facing)<br>' +
     'Flippable units include: conveyorbelt (changes orientation), piston, flipper, portal (switches off so that it can no longer teleport a unit away from it).',
 
+    # TODO: add typo to flipper's manual
+
     'piston':
     '[controllable]<br>A unit that can push other units.<br>' +
     paint('commands:<br>', '#ADE21E') +
     f'{paint("x", "#ADE21E")} -- extend pushing a unit in front of it to the next cell in that exact direction<br>' +
-    'Pistons can push non-empty containers (stacks, conveyorbelts, portals).',
+    'Pistons can push containers (stacks, conveyorbelts, portals).',
 
     'portal':
     'A unit that has a pair - other portal unit bound to it. If placed on an active portal, units are teleported to the portal\'s counterpart if it is not occupied.',
@@ -117,7 +118,8 @@ HELP_TEXT = {
     'rock': 'A unit which cannot be pushed or moved.',
 
     'typo':
-    '',
+    'Shit', 
+    # TODO: change this shit to something reasonable
 }
 
 
