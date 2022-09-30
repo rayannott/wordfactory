@@ -199,14 +199,15 @@ class ManualMessage(UIMessageWindow):
 
 
 class WinMessage(UIMessageWindow):
-    def __init__(self, manager, words, submitted_word, command_history, *args, **kwargs):
+    def __init__(self, manager, words, submitted_word, command_history, number_of_commands, *args, **kwargs):
         rect = pygame.Rect((200, 200), (600, 400))
         rect.center = (600, 400)
         to_show = [f'<font color=#4DE37C>{word}</font>' if word ==
                    submitted_word else word for word in words]
         html_message = 'You won!<br>' + \
             ' '.join(to_show) + '<br>' + 'Commands:<br>' + \
-            ' '.join(command_history)
+            ' '.join(command_history) + \
+            f'<br>Number of commands: {number_of_commands}'
         super().__init__(rect, html_message, manager, *args, **kwargs)
 
 
@@ -360,6 +361,7 @@ class Gui(Game):
                                     [f'{typo.pos}{typo.eliminated}' for typo in self.typos]))
                                 print('commands:', ' '.join(
                                     self.command_history))
+                                print('number of commands:', self.number_of_commands)
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: game information has been printed to the console<br>')
                             elif raw_command == '-clear':
@@ -402,7 +404,7 @@ class Gui(Game):
     def update(self):
         if self.victory:
             WinMessage(self.ui_manager, self.WORDS, ''.join(
-                self.submitted), command_history=self.command_history)
+                self.submitted), command_history=self.command_history, number_of_commands=self.number_of_commands)
             self.command_feedback.set_text('')
             self.command_input.disable()
             self.command_feedback.disable()
@@ -429,6 +431,13 @@ class Gui(Game):
                               else cmd for i, cmd in enumerate(self.multiple_cmds_mode.commands_to_display)]
                 self.command_feedback.set_text(' '.join(to_display))
 
+class PickLevelButton(UIButton):
+    def __init__(self, relative_rect, manager, button_text, filename, text_box_text, *args, **kwargs):
+        button_rect = pygame.Rect(relative_rect.topleft, (relative_rect.width, relative_rect.height*0.6))
+        text_box_rect = pygame.Rect(button_rect.bottomleft, (relative_rect.width, relative_rect.height*0.4))
+        self.level_filename = filename
+        super().__init__(button_rect, button_text, manager, tool_tip_text=filename)
+        self.textbox = UITextBox(text_box_text, text_box_rect, manager)
 
 class LevelButtonsPanel(UIPanel):
     def __init__(self, manager, level_filenames, **kwargs):
@@ -442,20 +451,31 @@ class LevelButtonsPanel(UIPanel):
         self.manager = manager
         super().__init__(self.panel_rect, starting_layer_height=0,
                          manager=self.manager, **kwargs)
+        self.progress_data_dict = load_progress_data()
+        print(self.progress_data_dict)
         self.create_buttons()
 
     def create_buttons(self):
         amount = len(self.level_filenames)
         start_x, start_y = (
             self.panel_rect.topleft[0] + 2*MARGIN, self.panel_rect.topleft[1] + 2*MARGIN)
-        self.buttons: List[UIButton] = []
+        self.buttons: List[PickLevelButton] = []
         for k in range(amount):
             j = k % self.grid_size[0]
             i = k // self.grid_size[0]
-            text = f'Level {get_level_number_from_filename(self.level_filenames[k])}'
-            # text_new = text_tmp.capitalize() if self.progress[self.level_filenames[k]]['solved'] else text_tmp
-            self.buttons.append(UIButton(relative_rect=pygame.Rect((start_x + j*(MARGIN + self.button_size[0]), start_y + i*(MARGIN + self.button_size[1])),
-                                self.button_size), text=text, manager=self.manager, tool_tip_text=self.level_filenames[k]))
+            button_text = f'Level {get_level_number_from_filename(self.level_filenames[k])}'
+            self.buttons.append(PickLevelButton(relative_rect=pygame.Rect((start_x + j*(MARGIN + self.button_size[0]), start_y + i*(MARGIN + self.button_size[1])),
+                                self.button_size), manager=self.manager, button_text=button_text, filename=self.level_filenames[k], text_box_text=''))
+            self.update_textbox_fields()
+
+    def update_textbox_fields(self):
+        for btn in self.buttons:
+            level_data_dict = self.progress_data_dict.get(btn.level_filename)
+            if level_data_dict:
+                tb_text = f'#of cmds: {paint(level_data_dict["num_of_cmds"], color="#0FFF0F")}'
+            else:
+                tb_text = paint('no solution', color='#707070')
+            btn.textbox.set_text(tb_text)
 
     def process_event(self, event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
@@ -466,6 +486,8 @@ class LevelButtonsPanel(UIPanel):
                         level_file=LEVELS_DIR + '/' + self.opened_level)
                     if solution:
                         print('sol:', solution)
+                        update_solution(self.progress_data_dict, self.opened_level, *solution)
+                        self.update_textbox_fields()
                     pygame.display.set_caption('Pick a level...')
         return super().process_event(event)
 
@@ -578,10 +600,8 @@ def GameWindow(level_file):
         pygame.display.update()
 
     if not exception_caught and game.victory:
-        return ' '.join(game.command_history)
-    else:
-        return ''
-    # game.kill()
+        return (game.number_of_commands, ' '.join(game.command_history))
+    
 
 
 def LevelCreationWindow():
