@@ -14,6 +14,7 @@ GROUP_ID_TEXTBOX_SIZE = (25, 28)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 LEVELS_DIR = 'levels'
+SFX_DIR = 'assets/SFX'
 SAVES_FILE_PATH = 'assets/save/save.json'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
          'submitter', 'card', 'piston', 'anvil', 'typo'}
@@ -56,11 +57,6 @@ def load_level_filenames():
     result = [el for el in level_files if el.startswith('level') and el.endswith('.txt')]
     result.sort(key=key)
     return result
-
-
-def create_progress_file(level_filenames):
-    progress = {filename: {'solved': False, 'solution': ''}
-                for filename in level_filenames}
 
 
 HELP_TEXT = {

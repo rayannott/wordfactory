@@ -10,6 +10,7 @@ from pygame_gui.core import ObjectID
 
 from objects import Cell, ConveyorBelt, Game, Manipulator, Rock
 from exceptions import *
+from sfx import play_sfx
 from utils import *
 
 
@@ -267,8 +268,10 @@ class Gui(Game):
             self.execute_on_group(command)
         except Warning as w:
             self.log_warning(w)
+            play_sfx('warning')
         except CustomException as e:
             self.process_exception(e)
+            play_sfx('exception')
 
     def process_event(self, event):
         if self.active:
@@ -385,6 +388,7 @@ class Gui(Game):
                                     raw_command)[0]
                                 self.try_execute_on_group(single_command)
                             except Warning as w:
+                                play_sfx('prompt_warning')
                                 self.log_warning(w)
                         self.command_input.set_text('')
                     elif event.key == pygame.K_DELETE:
@@ -399,10 +403,12 @@ class Gui(Game):
             if not self.notifications_shown.typos_eliminated and typos_eliminated and self.typos:
                 self.logs.log(paint('No typos (left)!<br>', '#88F07D'))
                 self.notifications_shown.typos_eliminated = True
+                play_sfx('typos_eliminated')
             self.update()
 
     def update(self):
         if self.victory:
+            play_sfx('victory')
             WinMessage(self.ui_manager, self.WORDS, ''.join(
                 self.submitted), command_history=self.command_history, number_of_commands=self.number_of_commands)
             self.command_feedback.set_text('')
@@ -481,6 +487,7 @@ class LevelButtonsPanel(UIPanel):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             for i, btn in enumerate(self.buttons):
                 if event.ui_element == btn:
+                    play_sfx('cool_click')
                     self.opened_level = self.level_filenames[i]
                     solution = GameWindow(
                         level_file=LEVELS_DIR + '/' + self.opened_level)
