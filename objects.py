@@ -126,6 +126,7 @@ class Game:
         self.typos = []
         self.number_of_commands = 0
         self.NOTE = []
+        self.is_running = True
 
 
         self.create_empty_field()
