@@ -1,4 +1,5 @@
 import re
+import json
 
 DIRECTIONS = {
     0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)
@@ -13,6 +14,7 @@ GROUP_ID_TEXTBOX_SIZE = (25, 28)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 LEVELS_DIR = 'levels'
+SAVES_FILE_PATH = 'assets/save/save.json'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
          'submitter', 'card', 'piston', 'anvil', 'typo'}
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'piston'}
@@ -136,3 +138,33 @@ def help_commands_processing(raw_command: str):
         s4 = f'To open the whole manual type<br>{paint("-help manual", "#4BDC28")}<br>'
         return s1 + s2 + s3 + s4
 
+def load_progress_data():
+    try:
+        with open(SAVES_FILE_PATH, 'r') as f:
+            saves = json.load(f)
+    except FileNotFoundError:
+        saves = dict()
+    return saves
+
+def save_progress_data(data_to_save):
+    with open(SAVES_FILE_PATH, 'w') as f:
+        json.dump(data_to_save, f)
+
+def update_solution(progress_data_dict, filename, num_of_cmds, solution):
+    this_entry = progress_data_dict.get(filename)
+    if this_entry:
+        if num_of_cmds <= this_entry['num_of_cmds']:
+            this_entry['num_of_cmds'] = num_of_cmds
+            this_entry['solution'] = solution
+    else:
+        this_entry = dict()
+        this_entry['num_of_cmds'] = num_of_cmds
+        this_entry['solution'] = solution
+        progress_data_dict[filename] = this_entry
+    save_progress_data(progress_data_dict)
+
+if __name__ == '__main__':
+    # a = load_progress_data()
+    # print(a)
+    a = {'saves': {'level1.txt', {'solution': '14dq35gc', 'num_of_cmds': 4}}}
+    save_progress_data(a)
