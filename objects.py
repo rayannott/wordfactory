@@ -651,7 +651,7 @@ class Typo(Unit):
         play_sfx('one_typo_eliminated')
 
     def flip(self):
-        self.eliminated = True
+        self.eliminate()
 
     def __str__(self):
         return f'{":" if self.eliminated else "!"}'
