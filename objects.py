@@ -121,6 +121,7 @@ class Game:
         self.groups = []
         self.submitted = []
         self.typos = []
+        self.number_of_commands = 0
         self.NOTE = []
 
 
@@ -258,6 +259,7 @@ class Game:
         if obj.pos is None:
             raise ControllableIsInsideContainer
         if obj.is_active:
+            self.number_of_commands += 1
             if obj.TYPE == 'manipulator':
                 if command == 't':
                     obj.c_take(game=self)
