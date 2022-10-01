@@ -482,7 +482,7 @@ class LevelButtonsPanel(UIPanel):
                 tooltip_list = []
                 for word, word_data in level_data_dict.items():
                     tb_list.append(paint(word_data["num_of_cmds"], color="#0FFF0F"))
-                    tooltip_list.append(paint(word, size=2))
+                    tooltip_list.append(word)
                 btn.tool_tip_text = '|'.join(tooltip_list)
                 tb_text = 'sol: ' + '|'.join(tb_list)
             else:
