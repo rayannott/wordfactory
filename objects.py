@@ -281,6 +281,10 @@ class Game:
                 elif command == 'a':
                     obj.c_rotate_counter_clockwise()
                     play_sfx('manipulator_a')
+                elif command == 's':
+                    obj.c_rotate_clockwise()
+                    obj.c_rotate_clockwise()
+                    play_sfx('manipulator_a')
                 else:
                     raise UnknownCommand(
                         f'Unknown command for {obj.TYPE}: {command}')

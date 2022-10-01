@@ -80,7 +80,9 @@ HELP_TEXT = {
     f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' +
     f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in the direction it is facing<br>' +
     f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
-    f'{paint("r", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees',
+    f'{paint("a", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees'+
+    f'{paint("s", "#ADE21E")} -- rotate hand 180 degrees',
+
 
     'conveyorbelt':
     '[controllable]<br>Another controllable unit which is also a container (one can put on or take from it). A conveyorbelt is oriented horisontally or vertically.<br>' +
