@@ -10,7 +10,7 @@ WINDOW_SIZE = (1200, 800)
 CELL_SIZE = (100, 100)
 MARGIN = 3
 BOARD_SIZE = (6, 8)
-GROUP_ID_TEXTBOX_SIZE = (25, 28)
+GROUP_ID_TEXTBOX_SIZE = (30, 28)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 LEVELS_DIR = 'levels'
@@ -146,21 +146,25 @@ def save_progress_data(data_to_save):
     with open(SAVES_FILE_PATH, 'w') as f:
         json.dump(data_to_save, f)
 
-def update_solution(progress_data_dict, filename, num_of_cmds, solution):
+def update_solution(progress_data_dict, filename, submitted_word, num_of_cmds, solution):
+    this_word_to_save = {
+        'num_of_cmds': num_of_cmds,
+        'solution': solution
+    }
     this_entry = progress_data_dict.get(filename)
     if this_entry:
-        if num_of_cmds <= this_entry['num_of_cmds']:
-            this_entry['num_of_cmds'] = num_of_cmds
-            this_entry['solution'] = solution
+        this_word = this_entry.get(submitted_word)
+        if this_word and num_of_cmds <= this_word['num_of_cmds'] or not this_word: 
+            this_entry[submitted_word] = this_word_to_save
+            progress_data_dict[filename] = this_entry
     else:
-        this_entry = dict()
-        this_entry['num_of_cmds'] = num_of_cmds
-        this_entry['solution'] = solution
+        this_entry = {
+            submitted_word: this_word_to_save
+        }
         progress_data_dict[filename] = this_entry
     save_progress_data(progress_data_dict)
 
 if __name__ == '__main__':
-    # a = load_progress_data()
-    # print(a)
-    a = {'saves': {'level1.txt', {'solution': '14dq35gc', 'num_of_cmds': 4}}}
-    save_progress_data(a)
+    data = load_progress_data()
+    update_solution(data, 'level1.txt', 'FSA', 1, '123')
+    # update_solution(data, 'level6.txt', 'QHEY', 60, '123')
