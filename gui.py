@@ -227,11 +227,17 @@ class Gui(Game):
         self.notifications_shown = SimpleNamespace(
             typos_left=False, typos_eliminated=False)
 
+
         exit_button_rect = pygame.Rect((0, 0), (100, COMMAND_INPUT_HEIGHT))
         exit_button_rect.topright = self.logs.rect.bottomright
         self.exit_button = UIButton(
             exit_button_rect, 'Exit', self.ui_manager, starting_height=2, tool_tip_text='all current progress will be lost')
 
+        reset_button_rect = pygame.Rect((0, 0), (100, COMMAND_INPUT_HEIGHT))
+        reset_button_rect.topleft = exit_button_rect.bottomleft
+        self.reset_button = UIButton(
+            reset_button_rect, 'Reset', self.ui_manager, starting_height=2, tool_tip_text='all current progress will be lost too')
+        
         self.reset_multiline_cmds_mode()
 
         level_number = get_level_number_from_filename(level_file)
@@ -381,6 +387,9 @@ class Gui(Game):
             play_sfx('cool_click_up')
             if event.ui_element == self.exit_button:
                 self.is_running = False
+            elif event.ui_element == self.reset_button:
+                UIMessageWindow(pygame.Rect(400, 300, 400, 400), 'Sorry, this does nothing', self.ui_manager)
+                play_sfx('fart')
         elif event.type == pygame_gui.UI_BUTTON_START_PRESS:
             play_sfx('cool_click_down')
 
@@ -499,8 +508,9 @@ class SettingsPanel(UIPanel):
         sfx_slider_rect = pygame.Rect(sfx_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
         self.sfx_volume_slider = UIHorizontalSlider(sfx_slider_rect, SFX_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
     
-    def volume_string(self, value):
-        return paint_linear(f'{value:.0%}', value, (0, 1), ((255,0,0),(0,255,0)))
+    @staticmethod
+    def volume_string(value) -> str:
+        return paint_linear(f'{value:.0%}', value, (0, 1), ((255,255,255),(0,255,0)))
 
     def process_event(self, event: pygame.event.Event) -> bool:
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
