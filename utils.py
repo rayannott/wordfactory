@@ -10,9 +10,12 @@ WINDOW_SIZE = (1200, 800)
 CELL_SIZE = (100, 100)
 MARGIN = 3
 BOARD_SIZE = (6, 8)
+LEVELS_GRID_SIZE = (7, 9)
 GROUP_ID_TEXTBOX_SIZE = (30, 28)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
+MUSIC_DEFAULT_VOLUME = 0.3
+SFX_DEFAULT_VOLUME = 0.6
 LEVELS_DIR = 'levels'
 SFX_DIR = 'assets/SFX'
 SAVES_FILE_PATH = 'assets/save/save.json'
@@ -25,12 +28,24 @@ def inside_borders(pos):
     row, col = pos
     return 0 <= row < BOARD_SIZE[0] and 0 <= col < BOARD_SIZE[1]
 
+def shift(vec1: tuple[int, int], vec2: tuple[int, int]) -> tuple[int, int]:
+    return (vec1[0] + vec2[0], vec1[1] + vec2[1])
+
 
 def paint(s: str, color: str = '#FFFFFF', size=4):
     '''
     Returns html-colored with given color string s
     '''
     return f'<font color={color} size={size}>{s}</font>'
+
+def paint_linear(text, number: float, rang: tuple[float, float], color_range) -> str:
+    t = (number - rang[0])/(rang[1] - rang[0])
+    color_tuple = (
+        int(color_range[0][0]*(1-t)+color_range[1][0]*t),
+        int(color_range[0][1]*(1-t)+color_range[1][1]*t),
+        int(color_range[0][2]*(1-t)+color_range[1][2]*t)
+    )
+    return paint(text, '#%02x%02x%02x' % color_tuple)
 
 
 def get_level_number_from_filename(filename):
@@ -167,6 +182,4 @@ def update_solution(progress_data_dict, filename, submitted_word, num_of_cmds, s
     save_progress_data(progress_data_dict)
 
 if __name__ == '__main__':
-    data = load_progress_data()
-    update_solution(data, 'level1.txt', 'FSA', 1, '123')
-    # update_solution(data, 'level6.txt', 'QHEY', 60, '123')
+    pass

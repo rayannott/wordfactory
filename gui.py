@@ -3,16 +3,16 @@ from types import SimpleNamespace
 from typing import List
 import pygame
 import pygame_gui
-from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIWindow
-from pygame_gui.elements.ui_drop_down_menu import UIDropDownMenu
+from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIHorizontalSlider, UILabel
 from pygame_gui.windows import UIMessageWindow
 from pygame_gui.core import ObjectID
 
 from objects import Cell, ConveyorBelt, Game, Manipulator, Rock
 from exceptions import *
-from sfx import play_sfx
+from sfx import bg_music_play, bg_music_set_vol, play_bg_music, play_sfx, set_sfx_volume
 from utils import *
 
+play_bg_music()
 
 class UICell(UIButton):
     def __init__(self, relative_rect, cell: Cell, manager, **kwargs):
@@ -378,10 +378,11 @@ class Gui(Game):
             self.update()
 
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
-            play_sfx('cool_click')
+            play_sfx('cool_click_up')
             if event.ui_element == self.exit_button:
-                print('exit')
                 self.is_running = False
+        elif event.type == pygame_gui.UI_BUTTON_START_PRESS:
+            play_sfx('cool_click_down')
 
         
 
@@ -430,14 +431,12 @@ class LevelButtonsPanel(UIPanel):
         # self.progress = progress
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
         self.panel_rect.topleft = (MARGIN, MARGIN)
-        self.panel_rect.size = (WINDOW_SIZE[0] - 200, WINDOW_SIZE[1] - 200)
-        self.grid_size = (8, 6)
         self.button_size = (121, 80)
+        self.panel_rect.size = (LEVELS_GRID_SIZE[0]*(self.button_size[0] + MARGIN) + 3*MARGIN, WINDOW_SIZE[1]-2*MARGIN)
         self.manager = manager
         super().__init__(self.panel_rect, starting_layer_height=0,
                          manager=self.manager, **kwargs)
         self.progress_data_dict = load_progress_data()
-        print(self.progress_data_dict)
         self.create_buttons()
 
     def create_buttons(self):
@@ -446,8 +445,8 @@ class LevelButtonsPanel(UIPanel):
             self.panel_rect.topleft[0] + 2*MARGIN, self.panel_rect.topleft[1] + 2*MARGIN)
         self.buttons: List[PickLevelButton] = []
         for k in range(amount):
-            j = k % self.grid_size[0]
-            i = k // self.grid_size[0]
+            j = k % LEVELS_GRID_SIZE[0]
+            i = k // LEVELS_GRID_SIZE[0]
             button_text = f'Level {get_level_number_from_filename(self.level_filenames[k])}'
             self.buttons.append(PickLevelButton(relative_rect=pygame.Rect((start_x + j*(MARGIN + self.button_size[0]), start_y + i*(MARGIN + self.button_size[1])),
                                 self.button_size), manager=self.manager, button_text=button_text, filename=self.level_filenames[k], text_box_text=''))
@@ -472,7 +471,6 @@ class LevelButtonsPanel(UIPanel):
         if event.type == pygame_gui.UI_BUTTON_PRESSED:
             for i, btn in enumerate(self.buttons):
                 if event.ui_element == btn:
-                    play_sfx('cool_click')
                     self.opened_level = self.level_filenames[i]
                     solution = GameWindow(
                         level_file=LEVELS_DIR + '/' + self.opened_level)
@@ -484,12 +482,46 @@ class LevelButtonsPanel(UIPanel):
         return super().process_event(event)
 
 class SettingsPanel(UIPanel):
-    def __init__(self, manager):
+    def __init__(self, manager, levels_panel_rect):
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
-        self.panel_rect.topleft = (WINDOW_SIZE[0] - 200 + MARGIN, MARGIN)
-        self.panel_rect.size = (200 - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
+        self.panel_rect.topleft = levels_panel_rect.topright
+        self.panel_rect.size = (WINDOW_SIZE[0] - levels_panel_rect.width - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
         self.manager = manager
         super().__init__(self.panel_rect, 0, self.manager)
+        APPROPRIATE_WIDTH = self.panel_rect.width - 2*MARGIN
+        music_vol_label_rect = pygame.Rect(shift(self.panel_rect.topleft, (MARGIN, MARGIN)), (APPROPRIATE_WIDTH, 30))
+        self.music_volume_tb = UITextBox(f'music volume: {self.volume_string(MUSIC_DEFAULT_VOLUME)}', music_vol_label_rect, self.manager)
+        music_slider_rect = pygame.Rect(music_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
+        self.music_volume_slider = UIHorizontalSlider(music_slider_rect, MUSIC_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
+
+        sfx_vol_label_rect = pygame.Rect(shift(music_slider_rect.bottomleft, (MARGIN, 2*MARGIN)), (APPROPRIATE_WIDTH, 30))
+        self.sfx_volume_tb = UITextBox(f'sfx volume: {self.volume_string(SFX_DEFAULT_VOLUME)}', sfx_vol_label_rect, self.manager)
+        sfx_slider_rect = pygame.Rect(sfx_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
+        self.sfx_volume_slider = UIHorizontalSlider(sfx_slider_rect, SFX_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
+    
+    def volume_string(self, value):
+        return paint_linear(f'{value:.0%}', value, (0, 1), ((255,0,0),(0,255,0)))
+
+    def process_event(self, event: pygame.event.Event) -> bool:
+        if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
+            if event.ui_element == self.music_volume_slider:
+                current_slider_value = self.music_volume_slider.get_current_value()
+                if current_slider_value == 0:
+                    bg_music_play(False)
+                else:
+                    bg_music_play(True)
+                    bg_music_set_vol(current_slider_value)
+                self.music_volume_tb.set_text(f'music volume: {self.volume_string(current_slider_value)}')
+            elif event.ui_element == self.sfx_volume_slider:
+                current_slider_value = self.sfx_volume_slider.get_current_value()
+                set_sfx_volume(current_slider_value)
+                self.sfx_volume_tb.set_text(f'sfx volume: {self.volume_string(current_slider_value)}')
+        elif event.type == pygame_gui.UI_BUTTON_START_PRESS:
+            play_sfx('cool_click_down')
+        elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+            play_sfx('cool_click_up')
+
+        return super().process_event(event)
 
 class LevelPicker():
     def __init__(self, manager, background, window_surface):
@@ -497,13 +529,9 @@ class LevelPicker():
         self.manager = manager
         self.background = background
         self.window_surface = window_surface
-        self.rect = pygame.Rect((0, 0, 0, 0))
-        self.rect.topleft = (300, 100)
-        self.rect.size = (600, 50)
         self.level_buttons_panel = LevelButtonsPanel(
             self.manager, self.level_filenames)
-        self.settings_panel = SettingsPanel(self.manager)
-        self.grid_size = (8, 6)
+        self.settings_panel = SettingsPanel(self.manager, self.level_buttons_panel.panel_rect)
         self.chosen_button_index = 0
         self.chosen_button_index_prev = 0
 
@@ -526,12 +554,12 @@ class LevelPicker():
                 if solution:
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
-            elif event.key == pygame.K_UP and self.chosen_button_index - self.grid_size[0] >= 0:
+            elif event.key == pygame.K_UP and self.chosen_button_index - LEVELS_GRID_SIZE[0] >= 0:
                 self.chosen_button_index_prev = self.chosen_button_index
                 self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
                 )
-                self.chosen_button_index -= self.grid_size[0]
-                # self.chosen_button_index %= self.grid_size[1]
+                self.chosen_button_index -= LEVELS_GRID_SIZE[0]
+                # self.chosen_button_index %= LEVELS_GRID_SIZE[1]
                 self.level_buttons_panel.buttons[self.chosen_button_index].select(
                 )
             elif event.key == pygame.K_RIGHT and self.chosen_button_index < len(self.level_buttons_panel.buttons) - 1:
@@ -539,15 +567,15 @@ class LevelPicker():
                 self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
                 )
                 self.chosen_button_index += 1
-                # self.chosen_button_index %= self.grid_size[0]
+                # self.chosen_button_index %= LEVELS_GRID_SIZE[0]
                 self.level_buttons_panel.buttons[self.chosen_button_index].select(
                 )
-            elif event.key == pygame.K_DOWN and self.chosen_button_index + self.grid_size[0] < len(self.level_buttons_panel.buttons):
+            elif event.key == pygame.K_DOWN and self.chosen_button_index + LEVELS_GRID_SIZE[0] < len(self.level_buttons_panel.buttons):
                 self.chosen_button_index_prev = self.chosen_button_index
                 self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
                 )
-                self.chosen_button_index += self.grid_size[0]
-                # self.chosen_button_index %= self.grid_size[1]
+                self.chosen_button_index += LEVELS_GRID_SIZE[0]
+                # self.chosen_button_index %= LEVELS_GRID_SIZE[1]
                 self.level_buttons_panel.buttons[self.chosen_button_index].select(
                 )
             elif event.key == pygame.K_LEFT and self.chosen_button_index > 0:
@@ -555,7 +583,7 @@ class LevelPicker():
                 self.level_buttons_panel.buttons[self.chosen_button_index].unselect(
                 )
                 self.chosen_button_index -= 1
-                # self.chosen_button_index %= self.grid_size[0]
+                # self.chosen_button_index %= LEVELS_GRID_SIZE[0]
                 self.level_buttons_panel.buttons[self.chosen_button_index].select(
                 )
 
