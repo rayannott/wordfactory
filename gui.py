@@ -236,7 +236,7 @@ class Gui(Game):
 
         level_number = get_level_number_from_filename(level_file)
         words_str = paint(' '.join(self.WORDS), '#E9D885', size=5)
-        self.init_text = f'Level {paint(level_number, "#17D36A")}<br>' + \
+        self.init_text = f'Level {paint(level_number, "#17D36A")}. {paint(self.NAME, "#4455FF")}<br>' + \
             f'{paint("goal")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
