@@ -274,17 +274,16 @@ class Gui(Game):
     def process_event(self, event):
         if self.active:
             shift_mode = pygame.key.get_mods() & pygame.KMOD_SHIFT
-            ctrl_mode = pygame.key.get_mods() & pygame.KMOD_CTRL
             if event.type == pygame.KEYDOWN:
-                if shift_mode and ctrl_mode:
+                if shift_mode:
                     if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
                         # compile commands and activate multiple_cmds_mode
-                        raw_commands = self.command_input.get_text()
-                        self.command_history.append(raw_commands)
+                        raw_command = self.command_input.get_text()
+                        self.command_history.append(raw_command)
                         self.command_input.set_text('')
                         try:
                             self.multiple_cmds_mode.commands, self.multiple_cmds_mode.commands_to_display = self.command_handler.get_command_sequence(
-                                raw_commands)
+                                raw_command)
                             self.multiple_cmds_mode.is_active = True
                             self.command_input.unfocus()
                             print('start steps')
@@ -292,56 +291,8 @@ class Gui(Game):
                             self.log_warning(w)
                         except CustomException as e:
                             self.process_exception(e)
-                elif shift_mode:
-                    if not self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
-                        raw_commands = self.command_input.get_text()
-                        print('instant execution: ', raw_commands)
-                        self.command_history.append(raw_commands)
-                        self.command_input.set_text('')
-                        try:
-                            commands_, _ = self.command_handler.get_command_sequence(
-                                raw_commands)
-                            for cmd_ in commands_:
-                                self.try_execute_on_group(cmd_)
-                        except Warning as w:
-                            self.log_warning(w)
-                        except CustomException as e:
-                            self.process_exception(e)
-                elif ctrl_mode:
-                    if self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
-                        # run compiled commands
-                        print('running')
-                        TOTAL_TIME = 4.0
-                        self.multiple_cmds_mode.run = True
-                        self.multiple_cmds_mode.delay = TOTAL_TIME / \
-                            len(self.multiple_cmds_mode.commands)
-                        self.multiple_cmds_mode.last_time = time()
                 else:
-                    if event.key == pygame.K_SLASH:
-                        self.command_input.focus()
-                    elif self.multiple_cmds_mode.is_active and event.key == pygame.K_RETURN:
-                        # do one step in a sequence of compiled commands in multiple_cmd_mode
-                        this_command = self.multiple_cmds_mode.commands[
-                            self.multiple_cmds_mode.current_cmd_index]
-                        self.try_execute_on_group(this_command)
-                        self.multiple_cmds_mode.current_cmd_index += 1
-                        if len(self.multiple_cmds_mode.commands) <= self.multiple_cmds_mode.current_cmd_index:
-                            print('end steps')
-                            self.command_input.focus()
-                            self.command_feedback.set_text('')
-                            self.reset_multiline_cmds_mode()
-                    elif self.multiple_cmds_mode.is_active and event.key == pygame.K_ESCAPE:
-                        print('multiline_mode off')
-                        self.command_feedback.set_text('')
-                        self.reset_multiline_cmds_mode()
-                    elif event.key == pygame.K_ESCAPE:
-                        self.command_input.unfocus()
-                    elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
-                        # insert previous prompt
-                        if self.command_history:
-                            self.command_input.set_text(
-                                self.command_history[-1])
-                    elif event.key == pygame.K_RETURN:
+                    if event.key == pygame.K_RETURN:
                         raw_command = self.command_input.get_text()
                         if raw_command.startswith('-'):
                             # run console commands
@@ -373,23 +324,47 @@ class Gui(Game):
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: try typing "-help"<br>')
                         else:
-                            # run one single command
-                            self.command_history.append(raw_command)
-                            try:
-                                if not raw_command:
-                                    raise EmptyPrompt(
-                                        'There is nothing to execute')
-                                if not self.command_handler.pattern_cmds.match(raw_command):
-                                    raise NotASingleCommand(
-                                        f'{raw_command} is not valid single-command; use [group_id][command] syntax; for more info try "-help"')
-                                single_command = self.command_handler.commands_on_single_group(
-                                    raw_command)[0]
-                                self.try_execute_on_group(single_command)
-                            except Warning as w:
-                                play_sfx('prompt_warning')
-                                self.log_warning(w)
+                            if not self.multiple_cmds_mode.is_active:
+                                raw_command = self.command_input.get_text()
+                                print('instant execution: ', raw_command)
+                                self.command_history.append(raw_command)
+                                try:
+                                    commands_, _ = self.command_handler.get_command_sequence(
+                                        raw_command)
+                                    for cmd_ in commands_:
+                                        self.try_execute_on_group(cmd_)
+                                except Warning as w:
+                                    play_sfx('prompt_warning')
+                                    self.log_warning(w)
+                                except CustomException as e:
+                                    self.process_exception(e)
+                            else:
+                                # do one step in a sequence of compiled commands in multiple_cmd_mode
+                                this_command = self.multiple_cmds_mode.commands[
+                                    self.multiple_cmds_mode.current_cmd_index]
+                                self.try_execute_on_group(this_command)
+                                self.multiple_cmds_mode.current_cmd_index += 1
+                                if len(self.multiple_cmds_mode.commands) <= self.multiple_cmds_mode.current_cmd_index:
+                                    print('end steps')
+                                    self.command_input.focus()
+                                    self.command_feedback.set_text('')
+                                    self.reset_multiline_cmds_mode()
                         self.command_input.set_text('')
-            
+                    elif event.key == pygame.K_SLASH:
+                        self.command_input.focus()
+                    elif event.key == pygame.K_ESCAPE:
+                        if self.multiple_cmds_mode.is_active:
+                            print('multiline_mode off')
+                            self.command_feedback.set_text('')
+                            self.reset_multiline_cmds_mode()
+                        else:
+                            self.command_input.unfocus()
+                    elif not self.multiple_cmds_mode.is_active and event.key == pygame.K_UP:
+                        # insert previous prompt
+                        if self.command_history:
+                            self.command_input.set_text(
+                                self.command_history[-1])
+                                
             word_created, typos_eliminated = self.is_victory()
             self.victory = word_created and typos_eliminated
             if not self.notifications_shown.typos_left and word_created and not typos_eliminated:
