@@ -1,4 +1,3 @@
-import json
 from types import SimpleNamespace
 from typing import List, Tuple
 from exceptions import *
@@ -6,6 +5,9 @@ from utils import *
 import re
 from copy import deepcopy
 from command_handler import CommandHandler
+from pygame import mixer
+import os
+from sfx import play_sfx
 
 
 class Unit:
@@ -83,9 +85,10 @@ class Cell:
                         raise CrushingSubmitter('Nice try looser hahahahaah')
                     self.contents.is_active = False
                     if isinstance(self.contents, Portal):
-                        self.contents.COUPLE.active = False
+                        self.contents.deactivate_couple()
                     if isinstance(self.contents, Typo):
-                        self.contents.eliminated = True
+                        self.contents.eliminate()
+                    play_sfx('anvil')
                     self.contents = self.pending
                     self.pending = None
                 elif isinstance(self.contents, Container):
@@ -263,32 +266,40 @@ class Game:
             if obj.TYPE == 'manipulator':
                 if command == 't':
                     obj.c_take(game=self)
+                    play_sfx('manipulator_p')
                 elif command == 'p':
                     obj.c_put(game=self)
+                    play_sfx('manipulator_p')
                 elif command == 'c':
                     obj.c_rotate_clockwise()
+                    play_sfx('manipulator_c')
                 elif command == 'a':
                     obj.c_rotate_counter_clockwise()
+                    play_sfx('manipulator_a')
                 else:
                     raise UnknownCommand(
                         f'Unknown command for {obj.TYPE}: {command}')
             elif obj.TYPE == 'piston':
                 if command == 'x':
                     obj.c_extend(game=self)
+                    play_sfx('piston')
                 else:
                     raise UnknownCommand(
                         f'Unknown command for {obj.TYPE}: {command}')
             elif obj.TYPE == 'conveyorbelt':
                 if command == '+':
                     obj.c_shift_positive(game=self)
+                    play_sfx('conveyor')
                 elif command == '-':
                     obj.c_shift_negative(game=self)
+                    play_sfx('conveyor')
                 else:
                     raise UnknownCommand(
                         f'Unknown command for {obj.TYPE}: {command}')
             elif obj.TYPE == 'flipper':
                 if command == 'f':
                     obj.c_flip_unit(game=self)
+                    play_sfx('flipper')
                 else:
                     raise UnknownCommand(
                         f'Unknown command for {obj.TYPE}: {command}')
@@ -480,6 +491,9 @@ class Portal(Coupled):
             self.send(obj)
         else:
             super().put_object(obj)
+        
+    def deactivate_couple(self):
+        self.COUPLE.active = False
 
     def send(self, obj):
         if self.COUPLE.pos == None:
@@ -489,9 +503,12 @@ class Portal(Coupled):
         obj.pos = None
         self.COUPLE.holds = obj
         self.holds = None
+        play_sfx('portal_send')
 
     def flip(self):
         self.active = not self.active
+        if not self.active:
+            play_sfx('portal_off')
 
     def __str__(self):
         return f'{self.id}{self.COUPLE_ID}[{self.holds if self.holds is not None else ""}]'
@@ -629,8 +646,12 @@ class Typo(Unit):
                          IS_STACKABLE, IS_CONTROLLABLE, IS_COUPLED, IS_CONTAINER)
         self.eliminated = False
 
-    def flip(self):
+    def eliminate(self):
         self.eliminated = True
+        play_sfx('one_typo_eliminated')
+
+    def flip(self):
+        self.eliminate()
 
     def __str__(self):
         return f'{":" if self.eliminated else "!"}'
