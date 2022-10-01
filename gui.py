@@ -472,7 +472,9 @@ class LevelButtonsPanel(UIPanel):
         for btn in self.buttons:
             level_data_dict = self.progress_data_dict.get(btn.level_filename)
             if level_data_dict:
-                tb_text = f'#of cmds: {paint(level_data_dict["num_of_cmds"], color="#0FFF0F")}'
+                tb_text = ''
+                for word, word_data in level_data_dict.items():
+                    tb_text += f'{paint(word_data["num_of_cmds"], color="#0FFF0F")}({paint(word, size=2)}) '
             else:
                 tb_text = paint('no solution', color='#707070')
             btn.textbox.set_text(tb_text)
@@ -600,7 +602,7 @@ def GameWindow(level_file):
         pygame.display.update()
 
     if not exception_caught and game.victory:
-        return (game.number_of_commands, ' '.join(game.command_history))
+        return (''.join(game.submitted), game.number_of_commands, ' '.join(game.command_history))
     
 
 
