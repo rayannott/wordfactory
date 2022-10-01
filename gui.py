@@ -227,18 +227,16 @@ class Gui(Game):
         self.notifications_shown = SimpleNamespace(
             typos_left=False, typos_eliminated=False)
 
-        dummy_button_rect = pygame.Rect((0, 0, 0, 0))
-        dummy_button_rect.size = (100, 60)
-        dummy_button_rect.topright = self.logs.rect.bottomright
-        self.dummy_button = UIButton(
-            dummy_button_rect, 'DUMMY', self.ui_manager)
-        self.dummy_button.hide()
+        exit_button_rect = pygame.Rect((0, 0), (100, COMMAND_INPUT_HEIGHT))
+        exit_button_rect.topright = self.logs.rect.bottomright
+        self.exit_button = UIButton(
+            exit_button_rect, 'Exit', self.ui_manager, starting_height=2, tool_tip_text='all current progress will be lost')
 
         self.reset_multiline_cmds_mode()
 
         level_number = get_level_number_from_filename(level_file)
         words_str = paint(' '.join(self.WORDS), '#E9D885', size=5)
-        self.init_text = f'Level {paint(level_number, "#17D36A")}<br>' + \
+        self.init_text = f'Level {paint(level_number, "#17D36A")}. {paint(self.NAME, "#4455FF")}<br>' + \
             f'{paint("goal")}: {paint("{")}{words_str}{paint("}")}<br>' + \
             (f'{paint("{")}{paint("<br>".join(self.NOTE), "#E19DD9")}{paint("}")}<br>' if self.NOTE else '')
         self.logs.log(self.init_text)
@@ -391,9 +389,7 @@ class Gui(Game):
                                 play_sfx('prompt_warning')
                                 self.log_warning(w)
                         self.command_input.set_text('')
-                    elif event.key == pygame.K_DELETE:
-                        pass
-
+            
             word_created, typos_eliminated = self.is_victory()
             self.victory = word_created and typos_eliminated
             if not self.notifications_shown.typos_left and word_created and not typos_eliminated:
@@ -405,6 +401,14 @@ class Gui(Game):
                 self.notifications_shown.typos_eliminated = True
                 play_sfx('typos_eliminated')
             self.update()
+
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            play_sfx('cool_click')
+            if event.ui_element == self.exit_button:
+                print('exit')
+                self.is_running = False
+
+        
 
     def update(self):
         if self.victory:
@@ -450,7 +454,7 @@ class LevelButtonsPanel(UIPanel):
         self.level_filenames = level_filenames
         # self.progress = progress
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
-        self.panel_rect.topleft = (100, 100)
+        self.panel_rect.topleft = (MARGIN, MARGIN)
         self.panel_rect.size = (WINDOW_SIZE[0] - 200, WINDOW_SIZE[1] - 200)
         self.grid_size = (8, 6)
         self.button_size = (121, 80)
@@ -504,6 +508,13 @@ class LevelButtonsPanel(UIPanel):
                     pygame.display.set_caption('Pick a level...')
         return super().process_event(event)
 
+class SettingsPanel(UIPanel):
+    def __init__(self, manager):
+        self.panel_rect = pygame.Rect((0, 0, 0, 0))
+        self.panel_rect.topleft = (WINDOW_SIZE[0] - 200 + MARGIN, MARGIN)
+        self.panel_rect.size = (200 - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
+        self.manager = manager
+        super().__init__(self.panel_rect, 0, self.manager)
 
 class LevelPicker():
     def __init__(self, manager, background, window_surface):
@@ -516,6 +527,7 @@ class LevelPicker():
         self.rect.size = (600, 50)
         self.level_buttons_panel = LevelButtonsPanel(
             self.manager, self.level_filenames)
+        self.settings_panel = SettingsPanel(self.manager)
         self.grid_size = (8, 6)
         self.chosen_button_index = 0
         self.chosen_button_index_prev = 0
@@ -585,7 +597,6 @@ def GameWindow(level_file):
     pygame.display.set_icon(pygame_icon)
     clock = pygame.time.Clock()
     exception_caught = False
-    is_running = True
 
     try:
         game = Gui(manager, level_file)
@@ -596,17 +607,14 @@ def GameWindow(level_file):
         UIMessageWindow(pygame.Rect((200, 200), (700, 700)), paint(
             f'{e.__class__.__name__} exception:<br>[{e}]', '#FF0F0F'), manager)
 
-    while is_running:
+    while game.is_running:
         time_delta = clock.tick(FRAMERATE)/1000.0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                is_running = False
-
+                game.is_running = False
             if not exception_caught:
                 game.process_event(event)
-
             manager.process_events(event)
-
         manager.update(time_delta)
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)

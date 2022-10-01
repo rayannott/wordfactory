@@ -126,6 +126,8 @@ class Game:
         self.typos = []
         self.number_of_commands = 0
         self.NOTE = []
+        self.NAME = ''
+        self.is_running = True
 
 
         self.create_empty_field()
@@ -148,7 +150,8 @@ class Game:
             'groups': re.compile(r'^groups?: ?\{([\[\] ,\d]+)\}'),
             'words': re.compile(r'^words?: ?\{([A-Z .]+)\}'),
             'letters': re.compile(r'^letters?: ?\{([A-Z.]+)\}'),
-            'note': re.compile(r'^# ?(.*)')
+            'note': re.compile(r'^# ?(.*)'),
+            'name': re.compile(r'^@ ?(.*)')
         }
         pattern_integer_value = re.compile(r'(\w+)=(\w+)')
         pattern_str_value = re.compile(r"(\w+)='(\w+)'")
@@ -229,6 +232,8 @@ class Game:
                         self.LETTERS = search_groups[0]
                     elif name == 'note':
                         self.NOTE.append(search_groups[0])
+                    elif name == 'name':
+                        self.NAME = search_groups[0]
                     else:
                         raise UnmatchedCreationPattern(
                             'unmatched_creation_pattern??')
