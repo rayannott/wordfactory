@@ -478,9 +478,13 @@ class LevelButtonsPanel(UIPanel):
         for btn in self.buttons:
             level_data_dict = self.progress_data_dict.get(btn.level_filename)
             if level_data_dict:
-                tb_text = ''
+                tb_list = []
+                tooltip_list = []
                 for word, word_data in level_data_dict.items():
-                    tb_text += f'{paint(word_data["num_of_cmds"], color="#0FFF0F")}({paint(word, size=2)}) '
+                    tb_list.append(paint(word_data["num_of_cmds"], color="#0FFF0F"))
+                    tooltip_list.append(paint(word, size=2))
+                btn.tool_tip_text = '|'.join(tooltip_list)
+                tb_text = 'sol: ' + '|'.join(tb_list)
             else:
                 tb_text = paint('no solution', color='#707070')
             btn.textbox.set_text(tb_text)
