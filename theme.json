@@ -31,182 +31,182 @@
     "#manipulator_0": {
         "images": {
             "normal_image": {
-                "path": "assets/manipulator_0.png"
+                "path": "assets/textures/manipulator_0.png"
             }
         }
     },
     "#manipulator_1": {
         "images": {
             "normal_image": {
-                "path": "assets/manipulator_1.png"
+                "path": "assets/textures/manipulator_1.png"
             }
         }
     },
     "#manipulator_2": {
         "images": {
             "normal_image": {
-                "path": "assets/manipulator_2.png"
+                "path": "assets/textures/manipulator_2.png"
             }
         }
     },
     "#manipulator_3": {
         "images": {
             "normal_image": {
-                "path": "assets/manipulator_3.png"
+                "path": "assets/textures/manipulator_3.png"
             }
         }
     },
     "#portal_active": {
         "images": {
             "normal_image": {
-                "path": "assets/portal_active.png"
+                "path": "assets/textures/portal_active.png"
             }
         }
     },
     "#portal_inactive": {
         "images": {
             "normal_image": {
-                "path": "assets/portal_inactive.png"
+                "path": "assets/textures/portal_inactive.png"
             }
         }
     },
     "#submitter": {
         "images": {
             "normal_image": {
-                "path": "assets/submitter.png"
+                "path": "assets/textures/submitter.png"
             }
         }
     },
     "#anvil": {
         "images": {
             "normal_image": {
-                "path": "assets/anvil.png"
+                "path": "assets/textures/anvil.png"
             }
         }
     },
     "#typo": {
         "images": {
             "normal_image": {
-                "path": "assets/typo.png"
+                "path": "assets/textures/typo.png"
             }
         }
     },
     "#typo_eliminated": {
         "images": {
             "normal_image": {
-                "path": "assets/typo_eliminated.png"
+                "path": "assets/textures/typo_eliminated.png"
             }
         }
     },
     "#stack": {
         "images": {
             "normal_image": {
-                "path": "assets/stack.png"
+                "path": "assets/textures/stack.png"
             }
         }
     },
     "#initstack": {
         "images": {
             "normal_image": {
-                "path": "assets/initstack.png"
+                "path": "assets/textures/initstack.png"
             }
         }
     },
     "#conveyorbelt_h": {
         "images": {
             "normal_image": {
-                "path": "assets/conveyorbelt_h.png"
+                "path": "assets/textures/conveyorbelt_h.png"
             }
         }
     },
     "#conveyorbelt_v": {
         "images": {
             "normal_image": {
-                "path": "assets/conveyorbelt_v.png"
+                "path": "assets/textures/conveyorbelt_v.png"
             }
         }
     },
     "#flipper_0": {
         "images": {
             "normal_image": {
-                "path": "assets/flipper_0.png"
+                "path": "assets/textures/flipper_0.png"
             }
         }
     },
     "#flipper_1": {
         "images": {
             "normal_image": {
-                "path": "assets/flipper_1.png"
+                "path": "assets/textures/flipper_1.png"
             }
         }
     },
     "#flipper_2": {
         "images": {
             "normal_image": {
-                "path": "assets/flipper_2.png"
+                "path": "assets/textures/flipper_2.png"
             }
         }
     },
     "#flipper_3": {
         "images": {
             "normal_image": {
-                "path": "assets/flipper_3.png"
+                "path": "assets/textures/flipper_3.png"
             }
         }
     },
     "#piston_0": {
         "images": {
             "normal_image": {
-                "path": "assets/piston_0.png"
+                "path": "assets/textures/piston_0.png"
             }
         }
     },
     "#piston_1": {
         "images": {
             "normal_image": {
-                "path": "assets/piston_1.png"
+                "path": "assets/textures/piston_1.png"
             }
         }
     },
     "#piston_2": {
         "images": {
             "normal_image": {
-                "path": "assets/piston_2.png"
+                "path": "assets/textures/piston_2.png"
             }
         }
     },
     "#piston_3": {
         "images": {
             "normal_image": {
-                "path": "assets/piston_3.png"
+                "path": "assets/textures/piston_3.png"
             }
         }
     },
     "#rock": {
         "images": {
             "normal_image": {
-                "path": "assets/rock.png"
+                "path": "assets/textures/rock.png"
             }
         }
     },
     "#card": {
         "images": {
             "normal_image": {
-                "path": "assets/card.png"
+                "path": "assets/textures/card.png"
             }
         }
     },
     "#EMPTY": {
         "images": {
             "normal_image": {
-                "path": "assets/empty.png"
+                "path": "assets/textures/empty.png"
             }
         }
     },
     "#OTHER": {
         "images": {
             "normal_image": {
-                "path": "assets/other.png"
+                "path": "assets/textures/other.png"
             }
         }
     }
