@@ -189,12 +189,17 @@ class LogTextBox(UITextBox):
     def log(self, text):
         self.append_html_text(text)
 
+class SyntaxMessage(UIMessageWindow):
+    def __init__(self, manager):
+        rect = pygame.Rect((200, 200), (700, 700))
+        html_message = '<br>'.join(SYNTAX_REF_TEXT) + '<br>'
+        super().__init__(rect, html_message, manager, window_title='Syntax reference')
 
 class ManualMessage(UIMessageWindow):
     def __init__(self, manager):
         rect = pygame.Rect((200, 200), (700, 700))
         html_message = '<br>'.join([
-            f'---{paint(unit.capitalize(), "#0F7CFF")}---<br>{HELP_TEXT[unit]}<br>' for unit, unit_help_text in HELP_TEXT.items()
+            f'---{paint(unit.capitalize(), "#0F7CFF")}---<br>{unit_help_text}<br>' for unit, unit_help_text in HELP_TEXT.items()
         ])
         super().__init__(rect, html_message, manager, window_title='Manual')
 
@@ -308,6 +313,8 @@ class Gui(Game):
                                 help = help_commands_processing(raw_command)
                                 if help == '@manual':
                                     ManualMessage(self.ui_manager)
+                                elif help == '@syntax':
+                                    SyntaxMessage(self.ui_manager)
                                 else:
                                     self.logs.log(help)
                             elif raw_command == '-info':

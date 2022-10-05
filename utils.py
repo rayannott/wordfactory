@@ -14,9 +14,9 @@ LEVELS_GRID_SIZE = (7, 9)
 GROUP_ID_TEXTBOX_SIZE = (30, 28)
 COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
-MUSIC_DEFAULT_VOLUME = 0.25
+MUSIC_DEFAULT_VOLUME = 0
 SFX_DEFAULT_VOLUME = 0.4
-LEVELS_DIR = 'levels'
+LEVELS_DIR = 'tutorial'
 SFX_DIR = 'assets/SFX'
 SAVES_FILE_PATH = 'assets/save/save.json'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
@@ -77,8 +77,8 @@ def load_level_filenames():
 HELP_TEXT = {
     'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units; the goal is to create one of the words from inside of the curly braces shown after the level number.<br>' +
     'Controllable units are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.<br>' + 
-    paint('Controls', '#62AAF7') + ':<br>-to execute a single command ([group_id][command_character]) press Return;<br>-to compile a sequence of commands* press Shift+Return, then press Return to execute selected command (press Esc to exit this mode) or Ctrl+Return to let it slowly go through the remaining commands;<br>' + 
-    '-to execute a sequence of commands instantly press Ctrl+Shift+Return.<br>',
+    paint('Controls', '#62AAF7') + ':<br>-to execute a single command ([group_id][command_character]) press RETURN;<br>-to compile a sequence of commands* press Shift+Return, then press RETURN to execute selected command (press Esc to exit this mode);<br>' + 
+    '-to execute a sequence of commands instantly just press RETURN.<br>',
 
     'card':
     'A unit with a letter (or a period) on it. Needs to be submitted to the Submitter in such an order that one of the words is created.',
@@ -137,6 +137,24 @@ HELP_TEXT = {
     # TODO: change this shit to something reasonable
 }
 
+SYNTAX_REF_TEXT = [
+    'There are a few options of controlling the units:',
+    f'  {paint("1.", color="#6CE720")} To run a single command use:',
+    f'    [{paint(("group_id"), "#9C8424")}][{paint("command", "#247F9C")}]',
+    f'        and press {paint("RETURN", "#98249C")},',
+    f'    where {paint("command", "#247F9C")} is a command letter (see "-help" to learn which commands correspond to a given controllable unit);',
+    f'    example: {paint(("0"), "#9C8424")}{paint("p", "#247F9C")}.',
+    f'  {paint("2.", color="#6CE720")} To run a sequence of commands use:',
+    f'    [{paint(("group_id"), "#9C8424")}][{paint("command_1", "#247F9C")}][{paint("command_2", "#247F9C")}]...[{paint("command_n", "#247F9C")}]',
+    f'        and press {paint("RETURN", "#98249C")},',
+    '    these commands will run instantly in a sequence;',
+    f'    example: {paint(("0"), "#9C8424")}{paint("ctsp", "#247F9C")}.',
+    f'  {paint("3.", color="#6CE720")} To compile a sequence of commands and execute them step by step use:',
+    f'    [{paint(("group_id"), "#9C8424")}][{paint("command_1", "#247F9C")}][{paint("command_2", "#247F9C")}]...[{paint("command_n", "#247F9C")}]',
+    f'        and press {paint("SHIFT+RETURN", "#98249C")} to compile, then press {paint("RETURN", "#88249C")} to run one command in a sequence;',
+    f'    example: {paint(("0"), "#9C8424")}{paint("ctsp", "#247F9C")} (SHIFT+RETURN)->  0c 0t 0s 0p.'
+
+]
 
 def help_commands_processing(raw_command: str):
     command = raw_command[5:].strip()
@@ -144,6 +162,8 @@ def help_commands_processing(raw_command: str):
         return f'----{paint(command.capitalize(), "#0F7CFF")}----<br>{HELP_TEXT[command]}<br>'
     elif command == 'manual':
         return '@manual'
+    elif command == 'syntax':
+        return '@syntax'
     else:
         s1 = 'To learn about units try these commands:<br>'
         s2 = f'{paint("-help", "#4BDC28")}<br>     {paint("<br>     ".join(UNITS), "#4BDC28")}<br>'
