@@ -1,0 +1,11 @@
+@ Portals
+words:{TP}
+letters:{TP}
+0 0 InitStack
+1 0 Manipulator
+1 1 Portal COUPLE_ID=3
+2 3 Portal COUPLE_ID=2
+3 3 Manipulator
+3 2 Submitter
+
+# Portals are coupled units. Placing a unit inside of the one would teleport it to the other.
