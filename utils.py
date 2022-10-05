@@ -16,7 +16,7 @@ COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
 COMMAND_INPUT_HEIGHT = 40
 MUSIC_DEFAULT_VOLUME = 0
 SFX_DEFAULT_VOLUME = 0.4
-LEVELS_DIR = 'tutorial'
+LEVELS_DIR = 'levels'
 SFX_DIR = 'assets/SFX'
 SAVES_FILE_PATH = 'assets/save/save.json'
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
@@ -154,7 +154,14 @@ SYNTAX_REF_TEXT = [
     f'  {paint("3.", color="#6CE720")} To compile a sequence of commands and execute them step by step use:',
     f'    [{paint(("group_id"), "#9C8424")}][{paint("command_1", "#247F9C")}][{paint("command_2", "#247F9C")}]...[{paint("command_n", "#247F9C")}]',
     f'        and press {paint("SHIFT+RETURN", "#98249C")} to compile, then press {paint("RETURN", "#88249C")} to run one command in a sequence;',
-    f'    example: {paint(("0"), "#9C8424")}{paint("ctsp", "#247F9C")} (SHIFT+RETURN)->  0c 0t 0s 0p.'
+    f'    example: {paint(("0"), "#9C8424")}{paint("ctsp", "#247F9C")} (SHIFT+RETURN)->  0c 0t 0s 0p.',
+    '',
+    'One can also make use of loops to repeat the same sequence of commands multiple times.',
+    'Loops have the following syntax:',
+    '  N[...],'
+    '    where N is a number of iterations and ... is a command or a sequence of commands to be repeated;',
+    f'    example: {paint("3[2a]", "#3AD8E2")} is equivalent to {paint("2a 2a 2a", "#3AD8E2")}',
+    f'    example: {paint("2[3tapc 1+]", "#3AD8E2")} is equivalent to {paint("3tapc 1+ 3tapc 1+", "#3AD8E2")}'
 
 ]
 
