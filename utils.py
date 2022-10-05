@@ -52,7 +52,7 @@ def paint_linear(text, number: float, rang: tuple[float, float], color_range) ->
 
 def get_level_number_from_filename(filename):
     _, level_number = re.compile(
-        f'({LEVELS_DIR}/)?level(.+).txt').search(filename).groups()
+        f'({LEVELS_DIR}/)?level(.+).wf').search(filename).groups()
     return level_number
 
 
@@ -69,9 +69,9 @@ def load_level_filenames():
     import os
     level_files = os.listdir(LEVELS_DIR)
 
-    level_filename_pattern = re.compile(r'level(\d+)(\.(\d+))?.txt')
+    level_filename_pattern = re.compile(r'level(\d+)(\.(\d+))?.wf')
     result = [el for el in level_files if el.startswith(
-        'level') and el.endswith('.txt')]
+        'level') and el.endswith('.wf')]
     result.sort(key=key)
     return result
 
