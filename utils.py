@@ -28,6 +28,7 @@ def inside_borders(pos):
     row, col = pos
     return 0 <= row < BOARD_SIZE[0] and 0 <= col < BOARD_SIZE[1]
 
+
 def shift(vec1: tuple[int, int], vec2: tuple[int, int]) -> tuple[int, int]:
     return (vec1[0] + vec2[0], vec1[1] + vec2[1])
 
@@ -37,6 +38,7 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
     Returns html-colored with given color string s
     '''
     return f'<font color={color} size={size}>{s}</font>'
+
 
 def paint_linear(text, number: float, rang: tuple[float, float], color_range) -> str:
     t = (number - rang[0])/(rang[1] - rang[0])
@@ -54,7 +56,6 @@ def get_level_number_from_filename(filename):
     return level_number
 
 
-
 def load_level_filenames():
     def key(file):
         match = level_filename_pattern.match(file)
@@ -64,20 +65,21 @@ def load_level_filenames():
         if sub_lvl_num:
             return int(lvl_num) + int(sub_lvl_num)/1000
         return int(lvl_num)
-    
+
     import os
     level_files = os.listdir(LEVELS_DIR)
 
     level_filename_pattern = re.compile(r'level(\d+)(\.(\d+))?.txt')
-    result = [el for el in level_files if el.startswith('level') and el.endswith('.txt')]
+    result = [el for el in level_files if el.startswith(
+        'level') and el.endswith('.txt')]
     result.sort(key=key)
     return result
 
 
 HELP_TEXT = {
     'rules': 'Move Cards to the Submitter in correct order by giving commands to controllable units; the goal is to create one of the words from inside of the curly braces shown after the level number.<br>' +
-    'Controllable units are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.<br>' + 
-    paint('Controls', '#62AAF7') + ':<br>-to execute a single command ([group_id][command_character]) press RETURN;<br>-to compile a sequence of commands* press Shift+Return, then press RETURN to execute selected command (press Esc to exit this mode);<br>' + 
+    'Controllable units are placed into controllable groups which have a unique id (shown in the cells\' top right corner); commands are given to those groups and executed by all units inside of them simultaneously.<br>' +
+    paint('Controls', '#62AAF7') + ':<br>-to execute a single command ([group_id][command_character]) press RETURN;<br>-to compile a sequence of commands* press Shift+Return, then press RETURN to execute selected command (press Esc to exit this mode);<br>' +
     '-to execute a sequence of commands instantly just press RETURN.<br>',
 
     'card':
@@ -95,7 +97,7 @@ HELP_TEXT = {
     f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' +
     f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in the direction it is facing<br>' +
     f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
-    f'{paint("a", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees'+
+    f'{paint("a", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees' +
     f'{paint("s", "#ADE21E")} -- rotate hand 180 degrees',
 
 
@@ -133,7 +135,7 @@ HELP_TEXT = {
     'rock': 'A unit which cannot be pushed or moved.',
 
     'typo':
-    'Shit', 
+    'Shit',
     # TODO: change this shit to something reasonable
 }
 
@@ -156,6 +158,7 @@ SYNTAX_REF_TEXT = [
 
 ]
 
+
 def help_commands_processing(raw_command: str):
     command = raw_command[5:].strip()
     if command in HELP_TEXT:
@@ -171,6 +174,7 @@ def help_commands_processing(raw_command: str):
         s4 = f'To open the whole manual type<br>{paint("-help manual", "#4BDC28")}<br>'
         return s1 + s2 + s3 + s4
 
+
 def load_progress_data():
     try:
         with open(SAVES_FILE_PATH, 'r') as f:
@@ -179,9 +183,11 @@ def load_progress_data():
         saves = dict()
     return saves
 
+
 def save_progress_data(data_to_save):
     with open(SAVES_FILE_PATH, 'w') as f:
         json.dump(data_to_save, f)
+
 
 def update_solution(progress_data_dict, filename, submitted_word, num_of_cmds, solution):
     this_word_to_save = {
@@ -191,7 +197,7 @@ def update_solution(progress_data_dict, filename, submitted_word, num_of_cmds, s
     this_entry = progress_data_dict.get(filename)
     if this_entry:
         this_word = this_entry.get(submitted_word)
-        if this_word and num_of_cmds <= this_word['num_of_cmds'] or not this_word: 
+        if this_word and num_of_cmds <= this_word['num_of_cmds'] or not this_word:
             this_entry[submitted_word] = this_word_to_save
             progress_data_dict[filename] = this_entry
     else:
@@ -200,6 +206,7 @@ def update_solution(progress_data_dict, filename, submitted_word, num_of_cmds, s
         }
         progress_data_dict[filename] = this_entry
     save_progress_data(progress_data_dict)
+
 
 if __name__ == '__main__':
     pass

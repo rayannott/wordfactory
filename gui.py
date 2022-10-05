@@ -14,6 +14,7 @@ from utils import *
 
 play_bg_music()
 
+
 class UICell(UIButton):
     def __init__(self, relative_rect, cell: Cell, manager, **kwargs):
         self.cell = cell
@@ -189,11 +190,13 @@ class LogTextBox(UITextBox):
     def log(self, text):
         self.append_html_text(text)
 
+
 class SyntaxMessage(UIMessageWindow):
     def __init__(self, manager):
         rect = pygame.Rect((200, 200), (700, 700))
         html_message = '<br>'.join(SYNTAX_REF_TEXT) + '<br>'
         super().__init__(rect, html_message, manager, window_title='Syntax reference')
+
 
 class ManualMessage(UIMessageWindow):
     def __init__(self, manager):
@@ -232,7 +235,6 @@ class Gui(Game):
         self.notifications_shown = SimpleNamespace(
             typos_left=False, typos_eliminated=False)
 
-
         exit_button_rect = pygame.Rect((0, 0), (100, COMMAND_INPUT_HEIGHT))
         exit_button_rect.topright = self.logs.rect.bottomright
         self.exit_button = UIButton(
@@ -242,7 +244,7 @@ class Gui(Game):
         reset_button_rect.topleft = exit_button_rect.bottomleft
         self.reset_button = UIButton(
             reset_button_rect, 'Reset', self.ui_manager, starting_height=2, tool_tip_text='all current progress will be lost too')
-        
+
         self.reset_multiline_cmds_mode()
 
         level_number = get_level_number_from_filename(level_file)
@@ -326,12 +328,14 @@ class Gui(Game):
                                     [f'{typo.pos}{typo.eliminated}' for typo in self.typos]))
                                 print('commands:', ' '.join(
                                     self.command_history))
-                                print('number of commands:', self.number_of_commands)
+                                print('number of commands:',
+                                      self.number_of_commands)
                                 self.logs.log(
                                     f'{paint("CONSOLE", "#FA1041")}: game information has been printed to the console<br>')
                             elif raw_command == '-clear':
                                 print('clearing')
-                                self.logs = LogTextBox(self.ui_manager, self.field_panel.rect)
+                                self.logs = LogTextBox(
+                                    self.ui_manager, self.field_panel.rect)
                                 self.logs.log(self.init_text)
                             else:
                                 self.logs.log(
@@ -377,7 +381,7 @@ class Gui(Game):
                         if self.command_history:
                             self.command_input.set_text(
                                 self.command_history[-1])
-                                
+
             word_created, typos_eliminated = self.is_victory()
             self.victory = word_created and typos_eliminated
             if not self.notifications_shown.typos_left and word_created and not typos_eliminated:
@@ -395,12 +399,11 @@ class Gui(Game):
             if event.ui_element == self.exit_button:
                 self.is_running = False
             elif event.ui_element == self.reset_button:
-                UIMessageWindow(pygame.Rect(400, 300, 400, 400), 'Sorry, this does nothing', self.ui_manager)
+                UIMessageWindow(pygame.Rect(400, 300, 400, 400),
+                                'Sorry, this does nothing', self.ui_manager)
                 play_sfx('fart')
         elif event.type == pygame_gui.UI_BUTTON_START_PRESS:
             play_sfx('cool_click_down')
-
-        
 
     def update(self):
         if self.victory:
@@ -433,13 +436,17 @@ class Gui(Game):
                               else cmd for i, cmd in enumerate(self.multiple_cmds_mode.commands_to_display)]
                 self.command_feedback.set_text(' '.join(to_display))
 
+
 class PickLevelButton(UIButton):
     def __init__(self, relative_rect, manager, button_text, filename, text_box_text, *args, **kwargs):
-        button_rect = pygame.Rect(relative_rect.topleft, (relative_rect.width, relative_rect.height*0.6))
-        text_box_rect = pygame.Rect(button_rect.bottomleft, (relative_rect.width, relative_rect.height*0.4))
+        button_rect = pygame.Rect(
+            relative_rect.topleft, (relative_rect.width, relative_rect.height*0.6))
+        text_box_rect = pygame.Rect(
+            button_rect.bottomleft, (relative_rect.width, relative_rect.height*0.4))
         self.level_filename = filename
         super().__init__(button_rect, button_text, manager, tool_tip_text=filename)
         self.textbox = UITextBox(text_box_text, text_box_rect, manager)
+
 
 class LevelButtonsPanel(UIPanel):
     def __init__(self, manager, level_filenames, **kwargs):
@@ -448,7 +455,8 @@ class LevelButtonsPanel(UIPanel):
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
         self.panel_rect.topleft = (MARGIN, MARGIN)
         self.button_size = (121, 80)
-        self.panel_rect.size = (LEVELS_GRID_SIZE[0]*(self.button_size[0] + MARGIN) + 3*MARGIN, WINDOW_SIZE[1]-2*MARGIN)
+        self.panel_rect.size = (
+            LEVELS_GRID_SIZE[0]*(self.button_size[0] + MARGIN) + 3*MARGIN, WINDOW_SIZE[1]-2*MARGIN)
         self.manager = manager
         super().__init__(self.panel_rect, starting_layer_height=0,
                          manager=self.manager, **kwargs)
@@ -475,7 +483,8 @@ class LevelButtonsPanel(UIPanel):
                 tb_list = []
                 tooltip_list = []
                 for word, word_data in level_data_dict.items():
-                    tb_list.append(paint(word_data["num_of_cmds"], color="#0FFF0F"))
+                    tb_list.append(
+                        paint(word_data["num_of_cmds"], color="#0FFF0F"))
                     tooltip_list.append(word)
                 btn.tool_tip_text = '|'.join(tooltip_list)
                 tb_text = 'sol: ' + '|'.join(tb_list)
@@ -492,32 +501,43 @@ class LevelButtonsPanel(UIPanel):
                         level_file=LEVELS_DIR + '/' + self.opened_level)
                     if solution:
                         print('sol:', solution)
-                        update_solution(self.progress_data_dict, self.opened_level, *solution)
+                        update_solution(self.progress_data_dict,
+                                        self.opened_level, *solution)
                         self.update_textbox_fields()
                     pygame.display.set_caption('Pick a level...')
         return super().process_event(event)
+
 
 class SettingsPanel(UIPanel):
     def __init__(self, manager, levels_panel_rect):
         self.panel_rect = pygame.Rect((0, 0, 0, 0))
         self.panel_rect.topleft = levels_panel_rect.topright
-        self.panel_rect.size = (WINDOW_SIZE[0] - levels_panel_rect.width - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
+        self.panel_rect.size = (
+            WINDOW_SIZE[0] - levels_panel_rect.width - 2*MARGIN, WINDOW_SIZE[1] - 2*MARGIN)
         self.manager = manager
         super().__init__(self.panel_rect, 0, self.manager)
         APPROPRIATE_WIDTH = self.panel_rect.width - 2*MARGIN
-        music_vol_label_rect = pygame.Rect(shift(self.panel_rect.topleft, (MARGIN, MARGIN)), (APPROPRIATE_WIDTH, 30))
-        self.music_volume_tb = UITextBox(f'music volume: {self.volume_string(MUSIC_DEFAULT_VOLUME)}', music_vol_label_rect, self.manager)
-        music_slider_rect = pygame.Rect(music_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
-        self.music_volume_slider = UIHorizontalSlider(music_slider_rect, MUSIC_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
+        music_vol_label_rect = pygame.Rect(
+            shift(self.panel_rect.topleft, (MARGIN, MARGIN)), (APPROPRIATE_WIDTH, 30))
+        self.music_volume_tb = UITextBox(
+            f'music volume: {self.volume_string(MUSIC_DEFAULT_VOLUME)}', music_vol_label_rect, self.manager)
+        music_slider_rect = pygame.Rect(
+            music_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
+        self.music_volume_slider = UIHorizontalSlider(
+            music_slider_rect, MUSIC_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
 
-        sfx_vol_label_rect = pygame.Rect(shift(music_slider_rect.bottomleft, (MARGIN, 2*MARGIN)), (APPROPRIATE_WIDTH, 30))
-        self.sfx_volume_tb = UITextBox(f'sfx volume: {self.volume_string(SFX_DEFAULT_VOLUME)}', sfx_vol_label_rect, self.manager)
-        sfx_slider_rect = pygame.Rect(sfx_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
-        self.sfx_volume_slider = UIHorizontalSlider(sfx_slider_rect, SFX_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
-    
+        sfx_vol_label_rect = pygame.Rect(
+            shift(music_slider_rect.bottomleft, (MARGIN, 2*MARGIN)), (APPROPRIATE_WIDTH, 30))
+        self.sfx_volume_tb = UITextBox(
+            f'sfx volume: {self.volume_string(SFX_DEFAULT_VOLUME)}', sfx_vol_label_rect, self.manager)
+        sfx_slider_rect = pygame.Rect(
+            sfx_vol_label_rect.bottomleft, (APPROPRIATE_WIDTH, 50))
+        self.sfx_volume_slider = UIHorizontalSlider(
+            sfx_slider_rect, SFX_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
+
     @staticmethod
     def volume_string(value) -> str:
-        return paint_linear(f'{value:.0%}', value, (0, 1), ((255,255,255),(0,255,0)))
+        return paint_linear(f'{value:.0%}', value, (0, 1), ((255, 255, 255), (0, 255, 0)))
 
     def process_event(self, event: pygame.event.Event) -> bool:
         if event.type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
@@ -528,17 +548,20 @@ class SettingsPanel(UIPanel):
                 else:
                     bg_music_play(True)
                     bg_music_set_vol(current_slider_value)
-                self.music_volume_tb.set_text(f'music volume: {self.volume_string(current_slider_value)}')
+                self.music_volume_tb.set_text(
+                    f'music volume: {self.volume_string(current_slider_value)}')
             elif event.ui_element == self.sfx_volume_slider:
                 current_slider_value = self.sfx_volume_slider.get_current_value()
                 set_sfx_volume(current_slider_value)
-                self.sfx_volume_tb.set_text(f'sfx volume: {self.volume_string(current_slider_value)}')
+                self.sfx_volume_tb.set_text(
+                    f'sfx volume: {self.volume_string(current_slider_value)}')
         elif event.type == pygame_gui.UI_BUTTON_START_PRESS:
             play_sfx('cool_click_down')
         elif event.type == pygame_gui.UI_BUTTON_PRESSED:
             play_sfx('cool_click_up')
 
         return super().process_event(event)
+
 
 class LevelPicker():
     def __init__(self, manager, background, window_surface):
@@ -548,7 +571,8 @@ class LevelPicker():
         self.window_surface = window_surface
         self.level_buttons_panel = LevelButtonsPanel(
             self.manager, self.level_filenames)
-        self.settings_panel = SettingsPanel(self.manager, self.level_buttons_panel.panel_rect)
+        self.settings_panel = SettingsPanel(
+            self.manager, self.level_buttons_panel.panel_rect)
         self.chosen_button_index = 0
         self.chosen_button_index_prev = 0
 
@@ -642,7 +666,6 @@ def GameWindow(level_file):
 
     if not exception_caught and game.victory:
         return (''.join(game.submitted), game.number_of_commands, ' '.join(game.command_history))
-    
 
 
 def LevelCreationWindow():
@@ -732,7 +755,6 @@ def LevelPickerWindow():
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
-
 
 
 def MenuWindow():

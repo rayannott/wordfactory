@@ -129,7 +129,6 @@ class Game:
         self.NAME = ''
         self.is_running = True
 
-
         self.create_empty_field()
         self.load_objects_from_txt(level_file)
         self.fill_field()
@@ -500,7 +499,7 @@ class Portal(Coupled):
             self.send(obj)
         else:
             super().put_object(obj)
-        
+
     def deactivate_couple(self):
         self.COUPLE.active = False
 
