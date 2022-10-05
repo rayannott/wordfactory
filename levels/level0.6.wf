@@ -1,0 +1,10 @@
+@ Pistons
+words:{HI}
+0 0 Submitter
+1 0 Manipulator
+3 1 Piston direction=0
+2 3 Piston direction=3
+2 1 Card letter='H'
+2 2 Card letter='I'
+
+# "-help piston"

@@ -1,0 +1,10 @@
+@ Multiple Words
+words:{K OK WOK}
+0 0 Submitter
+1 0 Manipulator
+0 1 Manipulator
+2 0 Card letter='O'
+1 1 Card letter='W'
+0 2 Card letter='K'
+
+# A level can have multiple words as its goal. You can submit any of them to win, but we challenge you to make all of the words.

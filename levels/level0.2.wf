@@ -1,0 +1,11 @@
+@ Conveyor Belts
+words:{A}
+0 0 Card letter='A'
+0 1 Manipulator
+1 1 ConveyorBelt orientation='h'
+1 2 ConveyorBelt orientation='v'
+0 2 Manipulator
+0 3 Submitter
+
+# Conveyor Belt is another controllable unit (container). Depending on its orientation, it can push units off of it left/right (horisontal) or up/down (vertical).
+# Manipulators can take units from ConveyorBelts, because the latter are containers.

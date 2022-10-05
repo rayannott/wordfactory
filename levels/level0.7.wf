@@ -1,0 +1,10 @@
+@ Flippers
+words:{.}
+1 0 Flipper direction=0
+0 0 Piston direction=0
+0 1 Card
+0 2 ConveyorBelt orientation='h'
+1 2 Submitter
+0 3 Flipper direction=3
+
+# Flippers can rotate Pistons and ConveyorBelts in the direction they are facing

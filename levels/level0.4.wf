@@ -1,0 +1,12 @@
+@ Rocks and Anvils
+words:{R}
+letters:{SIR}
+0 0 Rock
+1 1 InitStack
+1 0 Manipulator
+0 1 Manipulator
+0 2 Anvil
+2 0 ConveyorBelt orientation='h'
+2 1 Submitter
+
+# Rock units cannot be moved. However, Anvil can be put on any unit to crush it. Use this power carefully, dear Player.

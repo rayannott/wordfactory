@@ -1,0 +1,11 @@
+@ The Beginning
+words: {HI}
+letters: {HI}
+0 0 InitStack
+0 1 Manipulator
+0 2 Submitter
+
+# Welcome to the Word Factory - a programming zero-player game about assebmling words using various units.
+# The objective of every level is to submit letters to the Submitter (a green circle) by giving commands to controllable units (the ones that have a number in the top right corner).
+# A red square is called InitialStack, it stores letters which can be taken from it by a Manipulator (a unit in the middle). Letters are taken from the right (in this example, "H" will be taken first). Type "-help manipulator" to learn its commands.
+# Type "-help syntax" to learn about the commands' syntax.

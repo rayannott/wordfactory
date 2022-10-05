@@ -1,0 +1,9 @@
+@ Cards on the Field
+words:{A}
+0 0 Card letter='A'
+0 1 Manipulator
+0 2 ConveyorBelt orientation='v'
+1 1 Manipulator
+2 1 Submitter
+
+# Note that there may be no InitialStack on the level (like this one), but only Cards on the field.

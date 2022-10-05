@@ -1,0 +1,10 @@
+@ Stacks
+letters:{TOP}
+words:{POT TOP}
+0 0 InitStack
+0 1 Manipulator
+1 1 Stack
+1 2 Manipulator
+2 2 Submitter
+
+# Stack is a simple container that can hold multiple units (type "-help stack")
