@@ -1,0 +1,6 @@
+words: {ABC}
+letters: {ACB}
+1 0 InitStack
+0 1 Manipulator
+0 2 Manipulator
+1 2 Submitter

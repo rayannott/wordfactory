@@ -1,0 +1,13 @@
+words: {.}
+
+1 0 Submitter
+1 1 Manipulator
+1 2 Anvil
+2 1 ConveyorBelt orientation='v'
+3 1 ConveyorBelt orientation='v'
+0 1 Manipulator
+4 0 Typo
+4 2 Typo
+5 1 Card
+
+groups:{3 4}

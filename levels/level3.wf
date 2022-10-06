@@ -1,8 +1,0 @@
-words: {CAKE}
-letters: {CAEK}
-1 0 InitStack
-0 1 Manipulator
-0 2 Manipulator
-1 2 Submitter
-
-# I wonder if manipulators can...
