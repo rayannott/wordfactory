@@ -1,6 +1,5 @@
 from time import time
 from types import SimpleNamespace
-from typing import List
 import pygame
 import pygame_gui
 from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIHorizontalSlider, UILabel
@@ -12,7 +11,8 @@ from exceptions import *
 from sfx import bg_music_play, bg_music_set_vol, play_bg_music, play_sfx, set_sfx_volume
 from utils import *
 
-play_bg_music()
+if __name__ == '__main__':
+    play_bg_music()
 
 
 class UICell(UIButton):
@@ -467,7 +467,7 @@ class LevelButtonsPanel(UIPanel):
         amount = len(self.level_filenames)
         start_x, start_y = (
             self.panel_rect.topleft[0] + 2*MARGIN, self.panel_rect.topleft[1] + 2*MARGIN)
-        self.buttons: List[PickLevelButton] = []
+        self.buttons: list[PickLevelButton] = []
         for k in range(amount):
             j = k % LEVELS_GRID_SIZE[0]
             i = k // LEVELS_GRID_SIZE[0]
@@ -701,7 +701,7 @@ class LevelCreator:
         self.window_surface = window_surface
         self.cursor = None
         self.id = 0
-        self.field: List[List[Cell]] = [[Cell(pos=(i, j)) for j in range(BOARD_SIZE[1])]
+        self.field: list[list[Cell]] = [[Cell(pos=(i, j)) for j in range(BOARD_SIZE[1])]
                                         for i in range(BOARD_SIZE[0])]
         self.field_panel = FieldPanelCreationWindow(self.manager, self.field)
 
