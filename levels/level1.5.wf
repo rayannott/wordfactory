@@ -1,0 +1,12 @@
+words:{..}
+1 0 Piston direction=1
+1 1 Manipulator
+3 1 Manipulator
+2 1 ConveyorBelt orientation='v'
+2 2 ConveyorBelt orientation='v'
+0 1 Card
+0 2 Card
+3 0 Submitter
+4 2 Submitter
+
+groups:{3 4}

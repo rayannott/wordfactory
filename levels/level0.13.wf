@@ -1,0 +1,16 @@
+@ Grouped Units
+words:{HA AH}
+0 0 Card letter='H'
+0 2 Card letter='A'
+1 0 Manipulator
+1 2 Manipulator
+2 0 ConveyorBelt orientation='v'
+2 2 ConveyorBelt orientation='v'
+3 0 ConveyorBelt orientation='v'
+3 2 ConveyorBelt orientation='v'
+4 1 Manipulator
+5 1 Submitter
+groups:{2 3,4 5 6 7}
+
+# Units of the same type can be grouped by the same id number. 
+# That is, when command is given to that id, all units from the group will execute the command simultaneously.

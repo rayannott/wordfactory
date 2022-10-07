@@ -1,0 +1,11 @@
+@ Submitters?
+words:{..}
+0 1 Card
+1 0 Submitter
+1 1 Manipulator
+2 2 Manipulator
+2 3 Card
+3 2 Submitter
+
+# There may be more than one Submitter on the level.
+# All Submitters share the list of submitted letters. 
