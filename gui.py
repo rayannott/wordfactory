@@ -1,18 +1,15 @@
 from time import time
 from types import SimpleNamespace
-import pygame
-import pygame_gui
-from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIHorizontalSlider, UILabel
+
+import pygame, pygame_gui
+from pygame_gui.elements import UIButton, UIPanel, UITextEntryLine, UITextBox, UIHorizontalSlider
 from pygame_gui.windows import UIMessageWindow
 from pygame_gui.core import ObjectID
 
-from objects import Cell, ConveyorBelt, Game, Manipulator, Rock
 from exceptions import *
-from sfx import bg_music_play, bg_music_set_vol, play_bg_music, play_sfx, set_sfx_volume
 from utils import *
-
-if __name__ == '__main__':
-    play_bg_music()
+from objects import Cell, ConveyorBelt, Game, Manipulator, Rock
+from sfx import bg_music_play, bg_music_set_vol, play_sfx, set_sfx_volume
 
 
 class UICell(UIButton):
@@ -788,12 +785,3 @@ def MenuWindow():
         window_surface.blit(background, (0, 0))
         manager.draw_ui(window_surface)
         pygame.display.update()
-
-
-def main():
-    LevelPickerWindow()
-    # LevelCreationWindow()
-
-
-if __name__ == '__main__':
-    main()
