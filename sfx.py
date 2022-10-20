@@ -2,11 +2,12 @@ from utils import MUSIC_DEFAULT_VOLUME, SFX_DEFAULT_VOLUME, SFX_DIR
 from pygame import mixer
 import os
 from random import random
+from pathlib import PurePath
 
 mixer.init()
 sfx_files = os.listdir(SFX_DIR)
 
-sfx = {file[:-4]: mixer.Sound(os.path.join(SFX_DIR, file))
+sfx = {file[:-4]: mixer.Sound(PurePath(SFX_DIR, file))
        for file in sfx_files}
 
 
@@ -27,7 +28,7 @@ def play_sfx(name):
 
 
 def play_bg_music():
-    mixer.music.load(SFX_DIR + '/bg_music.mp3')
+    mixer.music.load(PurePath(SFX_DIR, 'bg_music.mp3'))
     bg_music_set_vol(MUSIC_DEFAULT_VOLUME)
     mixer.music.play(-1)
 

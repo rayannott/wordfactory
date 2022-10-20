@@ -1,5 +1,7 @@
 import re
 import json
+import os
+from pathlib import PurePath
 
 DIRECTIONS = {
     0: (-1, 0), 1: (0, 1), 2: (1, 0), 3: (0, -1)
@@ -12,13 +14,15 @@ MARGIN = 3
 BOARD_SIZE = (6, 8)
 LEVELS_GRID_SIZE = (7, 9)
 GROUP_ID_TEXTBOX_SIZE = (30, 28)
-COMMAND_INPUT_FORBIDDEN_CHARS = list('/')
+COMMAND_INPUT_FORBIDDEN_CHARS = ['/']
 COMMAND_INPUT_HEIGHT = 40
 MUSIC_DEFAULT_VOLUME = 0
 SFX_DEFAULT_VOLUME = 0.4
-LEVELS_DIR = 'levels'
-SFX_DIR = 'assets/SFX'
-SAVES_FILE_PATH = 'assets/save/save.json'
+LEVELS_DIR_TEXT = 'levels'
+LEVELS_DIR = PurePath(LEVELS_DIR_TEXT)
+SFX_DIR = PurePath('assets', 'SFX')
+SAVES_FILE_PATH = PurePath('assets', 'save', 'save.json')
+
 UNITS = {'manipulator', 'portal', 'conveyorbelt', 'rock', 'initstack', 'stack', 'flipper',
          'submitter', 'card', 'piston', 'anvil', 'typo'}
 CONTROLLABLE_UNITS = {'manipulator', 'conveyorbelt', 'flipper', 'piston'}
@@ -52,7 +56,7 @@ def paint_linear(text, number: float, rang: tuple[float, float], color_range: tu
 
 def get_level_number_from_filename(filename):
     _, level_number = re.compile(
-        f'({LEVELS_DIR}/)?level(.+).wf').search(filename).groups()
+        f'({LEVELS_DIR_TEXT}/)?level(.+).wf').search(str(filename)).groups()
     return level_number
 
 
@@ -66,7 +70,6 @@ def load_level_filenames():
             return int(lvl_num) + int(sub_lvl_num)/1000
         return int(lvl_num)
 
-    import os
     level_files = os.listdir(LEVELS_DIR)
 
     level_filename_pattern = re.compile(r'level(\d+)(\.(\d+))?.wf')

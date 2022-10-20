@@ -495,7 +495,7 @@ class LevelButtonsPanel(UIPanel):
                 if event.ui_element == btn:
                     self.opened_level = self.level_filenames[i]
                     solution = GameWindow(
-                        level_file=LEVELS_DIR + '/' + self.opened_level)
+                        level_file=PurePath(LEVELS_DIR, self.opened_level))
                     if solution:
                         print('sol:', solution)
                         update_solution(self.progress_data_dict,
@@ -579,7 +579,7 @@ class LevelPicker():
                 from random import choice
                 this_level = choice(self.level_filenames)
                 solution = GameWindow(
-                    level_file=LEVELS_DIR + '/' + this_level)
+                    level_file=PurePath(LEVELS_DIR, this_level))
                 if solution:
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
@@ -588,7 +588,7 @@ class LevelPicker():
                     'selected:', self.level_buttons_panel.buttons[self.chosen_button_index].text)
                 this_level = self.level_buttons_panel.level_filenames[self.chosen_button_index]
                 solution = GameWindow(
-                    level_file=LEVELS_DIR + '/' + this_level)
+                    level_file=PurePath(LEVELS_DIR, this_level))
                 if solution:
                     print('sol:', solution)
                 pygame.display.set_caption('Pick a level...')
