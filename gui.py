@@ -524,7 +524,7 @@ class SettingsPanel(UIPanel):
             music_slider_rect, MUSIC_DEFAULT_VOLUME, (0.0, 1.0), self.manager)
 
         sfx_vol_label_rect = pygame.Rect(
-            shift(music_slider_rect.bottomleft, (MARGIN, 2*MARGIN)), (APPROPRIATE_WIDTH, 30))
+            shift(music_slider_rect.bottomleft, (0, 2*MARGIN)), (APPROPRIATE_WIDTH, 30))
         self.sfx_volume_tb = UITextBox(
             f'sfx volume: {self.volume_string(SFX_DEFAULT_VOLUME)}', sfx_vol_label_rect, self.manager)
         sfx_slider_rect = pygame.Rect(
