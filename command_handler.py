@@ -21,7 +21,6 @@ class CommandHandler:
 
     def __init__(self):
         self.pattern_commands_on_single_group = re.compile(r'(\d+)([a-z+-]+)')
-        self.pattern_groups = re.compile(r'\(([^\(\)]+)\)')
         self.pattern_loops = re.compile(r'(\d+)\[([^\[\]]+)\]')
         self.pattern_references = re.compile(r'#(\d+)')
         self.pattern_cmds = re.compile(r'(\d+)([a-z+-])$')
