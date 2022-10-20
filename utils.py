@@ -40,7 +40,7 @@ def paint(s: str, color: str = '#FFFFFF', size=4):
     return f'<font color={color} size={size}>{s}</font>'
 
 
-def paint_linear(text, number: float, rang: tuple[float, float], color_range) -> str:
+def paint_linear(text, number: float, rang: tuple[float, float], color_range: tuple[tuple[int, int, int], tuple[int, int, int]]) -> str:
     t = (number - rang[0])/(rang[1] - rang[0])
     color_tuple = (
         int(color_range[0][0]*(1-t)+color_range[1][0]*t),
@@ -97,7 +97,7 @@ HELP_TEXT = {
     f'{paint("t", "#ADE21E")} -- take a movable unit from the cell in the direction it is facing<br>' +
     f'{paint("p", "#ADE21E")} -- put a unit it is holding to the cell in the direction it is facing<br>' +
     f'{paint("c", "#ADE21E")} -- rotate hand clockwise 90 degrees<br>' +
-    f'{paint("a", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees' +
+    f'{paint("a", "#ADE21E")} -- rotate hand anti-clockwise 90 degrees<br>' +
     f'{paint("s", "#ADE21E")} -- rotate hand 180 degrees',
 
 
