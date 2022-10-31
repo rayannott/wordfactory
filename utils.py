@@ -55,8 +55,7 @@ def paint_linear(text, number: float, rang: tuple[float, float], color_range: tu
 
 
 def get_level_number_from_filename(filename):
-    _, level_number = re.compile(
-        f'({LEVELS_DIR_TEXT}/)?level(.+).wf').search(str(filename)).groups()
+    level_number, = re.compile(f'level(.+).wf').search(str(filename)).groups()
     return level_number
 
 

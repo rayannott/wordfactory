@@ -220,6 +220,7 @@ class WinMessage(UIMessageWindow):
 class Gui(Game):
     def __init__(self, ui_manager, level_file):
         super().__init__(level_file)
+        level_file = os.path.split(level_file)[-1]
         self.ui_manager = ui_manager
         self.field_panel = FieldPanel(
             self.ui_manager, self.field)
