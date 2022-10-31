@@ -1,2 +1,2 @@
 # wordfactory
-A zero player game
+Kind of zero player game
