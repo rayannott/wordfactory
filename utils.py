@@ -59,6 +59,9 @@ def get_level_number_from_filename(filename):
     return level_number
 
 
+
+
+
 def load_level_filenames():
     def key(file):
         match = level_filename_pattern.match(file)
@@ -158,7 +161,7 @@ SYNTAX_REF_TEXT = [
     f'        and press {paint("SHIFT+RETURN", "#98249C")} to compile, then press {paint("RETURN", "#88249C")} to run one command in a sequence;',
     f'    example: {paint(("0"), "#9C8424")}{paint("ctsp", "#247F9C")} (SHIFT+RETURN)->  0c 0t 0s 0p.',
     '',
-    'One can also make use of loops to repeat the same sequence of commands multiple times.',
+    f'One can also make use of {paint("loops", "#5555FF")} to repeat the same sequence of commands multiple times.',
     'Loops have the following syntax:',
     '  N[...],'
     '    where N is a number of iterations and ... is a command or a sequence of commands to be repeated;',
@@ -180,8 +183,9 @@ def help_commands_processing(raw_command: str):
         s1 = 'To learn about units try these commands:<br>'
         s2 = f'{paint("-help", "#4BDC28")}<br>     {paint("<br>     ".join(UNITS), "#4BDC28")}<br>'
         s3 = f'To read the general rules type<br>{paint("-help rules", "#4BDC28")}<br>'
-        s4 = f'To open the whole manual type<br>{paint("-help manual", "#4BDC28")}<br>'
-        return s1 + s2 + s3 + s4
+        s4 = f'To open the syntax reference type<br>{paint("-help syntax", "#4BDC28")}<br>'
+        s5 = f'To open the whole manual type<br>{paint("-help manual", "#4BDC28")}<br>'
+        return s1 + s2 + s3 + s4 + s5
 
 
 def load_progress_data():
