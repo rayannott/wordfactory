@@ -3,7 +3,7 @@ desktop.ini
 levels/level_.txt
 __pycache__/
 progress.json
-gui.spec
+main.spec
 icon.ico
 build/
 assets/save/
